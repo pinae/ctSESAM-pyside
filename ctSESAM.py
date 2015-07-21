@@ -11,12 +11,12 @@ password_characters = small_letters + big_letters + numbers + special_characters
 salt = "pepper"
 
 
-def convert_bytes_to_password(hashed_bytes, length):
-    number = int.from_bytes(hashed_bytes, byteorder='big')
+def convert_bytes_to_password(digest, length):
+    number = int.from_bytes(digest, byteorder='big')
     password = ''
     while number > 0 and len(password) < length:
         password = password + password_characters[number % len(password_characters)]
-        number = number // len(password_characters)
+        number //= len(password_characters)
     return password
 
 master_password = input('Masterpasswort: ')
