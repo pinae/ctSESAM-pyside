@@ -79,7 +79,7 @@ class MainWindow(QWidget):
         self.layout.addWidget(self.iteration_label)
         # Window layout
         self.layout.addStretch()
-        self.setGeometry(0, 0, 300, 400)
+        self.setGeometry(0, 30, 300, 400)
         self.setWindowTitle("c't SESAM")
         self.maser_password_edit.setFocus()
         self.show()
