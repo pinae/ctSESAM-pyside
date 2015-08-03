@@ -117,11 +117,11 @@ class MainWindow(QWidget):
 
 
 class PasswordGenerator:
-    small_letters = list('abcdefghijklmnopqrstuvwxyz')
-    big_letters = list('ABCDEFGHJKLMNPQRTUVWXYZ')
-    numbers = list('0123456789')
+    lower_case_letters = list('abcdefghijklmnopqrstuvwxyz')
+    upper_case_letters = list('ABCDEFGHJKLMNPQRTUVWXYZ')
+    digits = list('0123456789')
     special_characters = list('#!"§$%&/()[]{}=-_+*<>;:.')
-    password_characters = small_letters + big_letters + numbers + special_characters
+    password_characters = lower_case_letters + upper_case_letters + digits + special_characters
     salt = "pepper".encode('utf-8')
 
     def convert_bytes_to_password(self, digest, length):
