@@ -12,7 +12,7 @@ from PySide.QtCore import Qt
 class MainWindow(QWidget):
     # noinspection PyUnresolvedReferences
     def __init__(self, clipboard):
-        super(MainWindow, self).__init__()
+        super().__init__()
         self.clipboard = clipboard
         self.setWindowIcon(QIcon('Logo_rendered_edited.png'))
         self.layout = QBoxLayout(QBoxLayout.TopToBottom, self)
@@ -117,12 +117,13 @@ class MainWindow(QWidget):
 
 
 class PasswordGenerator(object):
-    lower_case_letters = list('abcdefghijklmnopqrstuvwxyz')
-    upper_case_letters = list('ABCDEFGHJKLMNPQRTUVWXYZ')
-    digits = list('0123456789')
-    special_characters = list('#!"§$%&/()[]{}=-_+*<>;:.')
-    password_characters = lower_case_letters + upper_case_letters + digits + special_characters
-    salt = "pepper".encode('utf-8')
+    def __init__(self):
+        lower_case_letters = list('abcdefghijklmnopqrstuvwxyz')
+        upper_case_letters = list('ABCDEFGHJKLMNPQRTUVWXYZ')
+        digits = list('0123456789')
+        special_characters = list('#!"§$%&/()[]{}=-_+*<>;:.')
+        self.password_characters = lower_case_letters + upper_case_letters + digits + special_characters
+        self.salt = "pepper".encode('utf-8')
 
     def convert_bytes_to_password(self, digest, length):
         number = int.from_bytes(digest, byteorder='big')
