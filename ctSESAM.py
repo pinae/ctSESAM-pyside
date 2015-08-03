@@ -6,13 +6,15 @@ from hashlib import pbkdf2_hmac
 import sys
 from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont
 from PySide.QtGui import QLabel, QTextEdit, QCheckBox, QSlider, QPushButton
+from PySide.QtGui import QClipboard
 from PySide.QtCore import Qt
 
 
 class MainWindow(QWidget):
     # noinspection PyUnresolvedReferences
-    def __init__(self):
+    def __init__(self, clipboard):
         super(MainWindow, self).__init__()
+        self.clipboard = clipboard
         self.layout = QBoxLayout(QBoxLayout.TopToBottom, self)
         self.generator = None
         self.iterations = 4096
@@ -98,15 +100,18 @@ class MainWindow(QWidget):
         if len(self.domain_edit.toPlainText()) <= 0:
             self.edit_text_changed()
             return False
-        self.password.setText(self.generator.generate(
+        password = self.generator.generate(
             self.maser_password_edit.toPlainText(),
             self.domain_edit.toPlainText(),
             self.length_slider.sliderPosition(),
             self.iterations
-        ))
+        )
+        self.password.setText(password)
         self.password.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+        self.clipboard.setText(password)
         self.iteration_label.setText(
-            '<span style="font-size: 10px; color: #888888;">Das Passwort wurde ' + str(self.iterations) + ' mal gehasht.</span>')
+            '<span style="font-size: 10px; color: #888888;">Das Passwort wurde ' + str(self.iterations) +
+            ' mal gehasht <br />und in die Zwischenablage kopiert.</span>')
         self.iteration_label.setVisible(True)
         self.iterations += 1
 
@@ -135,5 +140,5 @@ class PasswordGenerator:
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    window = MainWindow()
+    window = MainWindow(app.clipboard())
     app.exec_()
