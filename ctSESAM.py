@@ -4,9 +4,8 @@
 from hashlib import pbkdf2_hmac
 
 import sys
-from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont
+from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon
 from PySide.QtGui import QLabel, QTextEdit, QCheckBox, QSlider, QPushButton
-from PySide.QtGui import QClipboard
 from PySide.QtCore import Qt
 
 
@@ -15,6 +14,7 @@ class MainWindow(QWidget):
     def __init__(self, clipboard):
         super(MainWindow, self).__init__()
         self.clipboard = clipboard
+        self.setWindowIcon(QIcon('Logo_rendered_edited.png'))
         self.layout = QBoxLayout(QBoxLayout.TopToBottom, self)
         self.generator = None
         self.iterations = 4096
