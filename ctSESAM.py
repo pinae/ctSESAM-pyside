@@ -116,7 +116,7 @@ class MainWindow(QWidget):
         self.iterations += 1
 
 
-class PasswordGenerator:
+class PasswordGenerator(object):
     lower_case_letters = list('abcdefghijklmnopqrstuvwxyz')
     upper_case_letters = list('ABCDEFGHJKLMNPQRTUVWXYZ')
     digits = list('0123456789')
@@ -138,7 +138,6 @@ class PasswordGenerator:
         return self.convert_bytes_to_password(hashed_bytes, length)
 
 
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = MainWindow(app.clipboard())
-    app.exec_()
+app = QApplication(sys.argv)
+window = MainWindow(app.clipboard())
+app.exec_()
