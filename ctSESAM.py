@@ -37,12 +37,15 @@ class MainWindow(QWidget):
         # Checkboxes
         self.special_characters_checkbox = QCheckBox("Sonderzeichen")
         self.special_characters_checkbox.setChecked(True)
+        self.special_characters_checkbox.stateChanged.connect(self.edit_text_changed)
         self.layout.addWidget(self.special_characters_checkbox)
         self.letters_checkbox = QCheckBox("Buchstaben")
         self.letters_checkbox.setChecked(True)
+        self.letters_checkbox.stateChanged.connect(self.edit_text_changed)
         self.layout.addWidget(self.letters_checkbox)
         self.digits_checkbox = QCheckBox("Zahlen")
         self.digits_checkbox.setChecked(True)
+        self.digits_checkbox.stateChanged.connect(self.edit_text_changed)
         self.layout.addWidget(self.digits_checkbox)
         # Length slider
         self.length_label = QLabel("&Länge:")
@@ -93,13 +96,28 @@ class MainWindow(QWidget):
     def edit_text_changed(self):
         self.iterations = 4096
         self.iteration_label.setVisible(False)
+        self.password.setText('')
+        self.clipboard.setText('')
 
     def generate_password(self):
         if len(self.domain_edit.toPlainText()) <= 0:
             self.edit_text_changed()
-            self.password.setText('')
             self.iteration_label.setText(
                 '<span style="font-size: 10px; color: #aa0000;">Bitte geben Sie eine Domain an.</span>')
+            self.iteration_label.setVisible(True)
+            return False
+        if self.letters_checkbox.isChecked() or \
+           self.digits_checkbox.isChecked() or \
+           self.special_characters_checkbox.isChecked():
+            self.generator.set_password_characters(
+                self.letters_checkbox.isChecked(),
+                self.digits_checkbox.isChecked(),
+                self.special_characters_checkbox.isChecked())
+        else:
+            self.edit_text_changed()
+            self.iteration_label.setText(
+                '<span style="font-size: 10px; color: #aa0000;">Bei den aktuellen Einstellungen ' +
+                'kann kein Passwort berechnet werden.</span>')
             self.iteration_label.setVisible(True)
             return False
         password = self.generator.generate(
@@ -120,12 +138,26 @@ class MainWindow(QWidget):
 
 class PasswordGenerator(object):
     def __init__(self):
+        self.password_characters = []
+        self.set_password_characters()
+        self.salt = "pepper".encode('utf-8')
+
+    def set_password_characters(self, use_letters=True, use_digits=True, use_special_characters=True):
+        if not use_letters and not use_digits and not use_special_characters:
+            use_letters = True
+            use_digits = True
+            use_special_characters = True
         lower_case_letters = list('abcdefghijklmnopqrstuvwxyz')
         upper_case_letters = list('ABCDEFGHJKLMNPQRTUVWXYZ')
         digits = list('0123456789')
         special_characters = list('#!"§$%&/()[]{}=-_+*<>;:.')
-        self.password_characters = lower_case_letters + upper_case_letters + digits + special_characters
-        self.salt = "pepper".encode('utf-8')
+        self.password_characters = []
+        if use_letters:
+            self.password_characters += lower_case_letters + upper_case_letters
+        if use_digits:
+            self.password_characters += digits
+        if use_special_characters:
+            self.password_characters += special_characters
 
     def convert_bytes_to_password(self, digest, length):
         number = int.from_bytes(digest, byteorder='big')
