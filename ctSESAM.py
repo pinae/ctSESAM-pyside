@@ -16,7 +16,7 @@ class MainWindow(QWidget):
         self.clipboard = clipboard
         self.setWindowIcon(QIcon('Logo_rendered_edited.png'))
         self.layout = QBoxLayout(QBoxLayout.TopToBottom, self)
-        self.generator = PasswordGenerator()
+        self.generator = CtSesam()
         self.iterations = 4096
         # Master password
         self.master_password_label = QLabel("&Master-Passwort:")
@@ -136,7 +136,7 @@ class MainWindow(QWidget):
         self.iterations += 1
 
 
-class PasswordGenerator(object):
+class CtSesam(object):
     def __init__(self):
         self.password_characters = []
         self.set_password_characters()
