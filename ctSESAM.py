@@ -16,7 +16,7 @@ class MainWindow(QWidget):
         self.clipboard = clipboard
         self.setWindowIcon(QIcon('Logo_rendered_edited.png'))
         self.layout = QBoxLayout(QBoxLayout.TopToBottom, self)
-        self.generator = None
+        self.generator = PasswordGenerator()
         self.iterations = 4096
         # Master password
         self.master_password_label = QLabel("&Master-Passwort:")
@@ -95,10 +95,12 @@ class MainWindow(QWidget):
         self.iteration_label.setVisible(False)
 
     def generate_password(self):
-        if not self.generator:
-            self.generator = PasswordGenerator()
         if len(self.domain_edit.toPlainText()) <= 0:
             self.edit_text_changed()
+            self.password.setText('')
+            self.iteration_label.setText(
+                '<span style="font-size: 10px; color: #aa0000;">Bitte geben Sie eine Domain an.</span>')
+            self.iteration_label.setVisible(True)
             return False
         password = self.generator.generate(
             self.maser_password_edit.toPlainText(),
