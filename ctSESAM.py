@@ -21,7 +21,7 @@ class MainWindow(QWidget):
         # Master password
         self.master_password_label = QLabel("&Master-Passwort:")
         self.maser_password_edit = QTextEdit()
-        self.maser_password_edit.textChanged.connect(self.edit_text_changed)
+        self.maser_password_edit.textChanged.connect(self.reset_iterations)
         self.maser_password_edit.setMaximumHeight(28)
         self.master_password_label.setBuddy(self.maser_password_edit)
         self.layout.addWidget(self.master_password_label)
@@ -29,7 +29,7 @@ class MainWindow(QWidget):
         # Domain
         self.domain_label = QLabel("&Domain:")
         self.domain_edit = QTextEdit()
-        self.domain_edit.textChanged.connect(self.edit_text_changed)
+        self.domain_edit.textChanged.connect(self.reset_iterations)
         self.domain_edit.setMaximumHeight(28)
         self.domain_label.setBuddy(self.domain_edit)
         self.layout.addWidget(self.domain_label)
@@ -37,15 +37,15 @@ class MainWindow(QWidget):
         # Checkboxes
         self.special_characters_checkbox = QCheckBox("Sonderzeichen")
         self.special_characters_checkbox.setChecked(True)
-        self.special_characters_checkbox.stateChanged.connect(self.edit_text_changed)
+        self.special_characters_checkbox.stateChanged.connect(self.reset_iterations)
         self.layout.addWidget(self.special_characters_checkbox)
         self.letters_checkbox = QCheckBox("Buchstaben")
         self.letters_checkbox.setChecked(True)
-        self.letters_checkbox.stateChanged.connect(self.edit_text_changed)
+        self.letters_checkbox.stateChanged.connect(self.reset_iterations)
         self.layout.addWidget(self.letters_checkbox)
         self.digits_checkbox = QCheckBox("Zahlen")
         self.digits_checkbox.setChecked(True)
-        self.digits_checkbox.stateChanged.connect(self.edit_text_changed)
+        self.digits_checkbox.stateChanged.connect(self.reset_iterations)
         self.layout.addWidget(self.digits_checkbox)
         # Length slider
         self.length_label = QLabel("&Länge:")
@@ -78,10 +78,10 @@ class MainWindow(QWidget):
         self.layout.addWidget(self.password_label)
         self.layout.addWidget(self.password)
         # Iteration display
-        self.iteration_label = QLabel()
-        self.iteration_label.setTextFormat(Qt.RichText)
-        self.iteration_label.setVisible(False)
-        self.layout.addWidget(self.iteration_label)
+        self.message_label = QLabel()
+        self.message_label.setTextFormat(Qt.RichText)
+        self.message_label.setVisible(False)
+        self.layout.addWidget(self.message_label)
         # Window layout
         self.layout.addStretch()
         self.setGeometry(0, 30, 300, 400)
@@ -91,20 +91,20 @@ class MainWindow(QWidget):
 
     def length_slider_changed(self):
         self.length_display.setText(str(self.length_slider.sliderPosition()))
-        self.edit_text_changed()
+        self.reset_iterations()
 
-    def edit_text_changed(self):
+    def reset_iterations(self):
         self.iterations = 4096
-        self.iteration_label.setVisible(False)
+        self.message_label.setVisible(False)
         self.password.setText('')
         self.clipboard.setText('')
 
     def generate_password(self):
         if len(self.domain_edit.toPlainText()) <= 0:
-            self.edit_text_changed()
-            self.iteration_label.setText(
+            self.reset_iterations()
+            self.message_label.setText(
                 '<span style="font-size: 10px; color: #aa0000;">Bitte geben Sie eine Domain an.</span>')
-            self.iteration_label.setVisible(True)
+            self.message_label.setVisible(True)
             return False
         if self.letters_checkbox.isChecked() or \
            self.digits_checkbox.isChecked() or \
@@ -114,11 +114,11 @@ class MainWindow(QWidget):
                 self.digits_checkbox.isChecked(),
                 self.special_characters_checkbox.isChecked())
         else:
-            self.edit_text_changed()
-            self.iteration_label.setText(
+            self.reset_iterations()
+            self.message_label.setText(
                 '<span style="font-size: 10px; color: #aa0000;">Bei den aktuellen Einstellungen ' +
                 'kann kein Passwort berechnet werden.</span>')
-            self.iteration_label.setVisible(True)
+            self.message_label.setVisible(True)
             return False
         password = self.generator.generate(
             self.maser_password_edit.toPlainText(),
@@ -129,10 +129,10 @@ class MainWindow(QWidget):
         self.password.setText(password)
         self.password.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
         self.clipboard.setText(password)
-        self.iteration_label.setText(
+        self.message_label.setText(
             '<span style="font-size: 10px; color: #888888;">Das Passwort wurde ' + str(self.iterations) +
             ' mal gehasht <br />und in die Zwischenablage kopiert.</span>')
-        self.iteration_label.setVisible(True)
+        self.message_label.setVisible(True)
         self.iterations += 1
 
 
