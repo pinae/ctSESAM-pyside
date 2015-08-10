@@ -23,6 +23,7 @@ class MainWindow(QWidget):
         self.maser_password_edit = QLineEdit()
         self.maser_password_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self.maser_password_edit.textChanged.connect(self.reset_iterations)
+        self.maser_password_edit.returnPressed.connect(self.move_focus)
         self.maser_password_edit.setMaximumHeight(28)
         self.master_password_label.setBuddy(self.maser_password_edit)
         self.layout.addWidget(self.master_password_label)
@@ -31,6 +32,7 @@ class MainWindow(QWidget):
         self.domain_label = QLabel("&Domain:")
         self.domain_edit = QLineEdit()
         self.domain_edit.textChanged.connect(self.reset_iterations)
+        self.domain_edit.returnPressed.connect(self.move_focus)
         self.domain_edit.setMaximumHeight(28)
         self.domain_label.setBuddy(self.domain_edit)
         self.layout.addWidget(self.domain_label)
@@ -39,6 +41,7 @@ class MainWindow(QWidget):
         self.username_label = QLabel("&Username:")
         self.username_edit = QLineEdit()
         self.username_edit.textChanged.connect(self.reset_iterations)
+        self.username_edit.returnPressed.connect(self.move_focus)
         self.username_edit.setMaximumHeight(28)
         self.username_label.setBuddy(self.username_edit)
         self.layout.addWidget(self.username_label)
@@ -107,6 +110,13 @@ class MainWindow(QWidget):
         self.message_label.setVisible(False)
         self.password.setText('')
         self.clipboard.setText('')
+
+    def move_focus(self):
+        line_edits = [self.maser_password_edit, self.domain_edit, self.username_edit]
+        for i, edit in enumerate(line_edits):
+            if edit.hasFocus():
+                line_edits[(i + 1) % len(line_edits)].setFocus()
+                break
 
     def generate_password(self):
         if len(self.domain_edit.text()) <= 0:
