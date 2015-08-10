@@ -5,7 +5,7 @@ from hashlib import pbkdf2_hmac
 
 import sys
 from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon
-from PySide.QtGui import QLabel, QTextEdit, QCheckBox, QSlider, QPushButton
+from PySide.QtGui import QLabel, QLineEdit, QCheckBox, QSlider, QPushButton
 from PySide.QtCore import Qt
 
 
@@ -20,7 +20,8 @@ class MainWindow(QWidget):
         self.iterations = 4096
         # Master password
         self.master_password_label = QLabel("&Master-Passwort:")
-        self.maser_password_edit = QTextEdit()
+        self.maser_password_edit = QLineEdit()
+        self.maser_password_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self.maser_password_edit.textChanged.connect(self.reset_iterations)
         self.maser_password_edit.setMaximumHeight(28)
         self.master_password_label.setBuddy(self.maser_password_edit)
@@ -28,12 +29,20 @@ class MainWindow(QWidget):
         self.layout.addWidget(self.maser_password_edit)
         # Domain
         self.domain_label = QLabel("&Domain:")
-        self.domain_edit = QTextEdit()
+        self.domain_edit = QLineEdit()
         self.domain_edit.textChanged.connect(self.reset_iterations)
         self.domain_edit.setMaximumHeight(28)
         self.domain_label.setBuddy(self.domain_edit)
         self.layout.addWidget(self.domain_label)
         self.layout.addWidget(self.domain_edit)
+        # Username
+        self.username_label = QLabel("&Username:")
+        self.username_edit = QLineEdit()
+        self.username_edit.textChanged.connect(self.reset_iterations)
+        self.username_edit.setMaximumHeight(28)
+        self.username_label.setBuddy(self.username_edit)
+        self.layout.addWidget(self.username_label)
+        self.layout.addWidget(self.username_edit)
         # Checkboxes
         self.special_characters_checkbox = QCheckBox("Sonderzeichen")
         self.special_characters_checkbox.setChecked(True)
@@ -100,7 +109,7 @@ class MainWindow(QWidget):
         self.clipboard.setText('')
 
     def generate_password(self):
-        if len(self.domain_edit.toPlainText()) <= 0:
+        if len(self.domain_edit.text()) <= 0:
             self.reset_iterations()
             self.message_label.setText(
                 '<span style="font-size: 10px; color: #aa0000;">Bitte geben Sie eine Domain an.</span>')
@@ -110,9 +119,9 @@ class MainWindow(QWidget):
            self.digits_checkbox.isChecked() or \
            self.special_characters_checkbox.isChecked():
             self.generator.set_password_characters(
-                self.letters_checkbox.isChecked(),
-                self.digits_checkbox.isChecked(),
-                self.special_characters_checkbox.isChecked())
+                use_letters=self.letters_checkbox.isChecked(),
+                use_digits=self.digits_checkbox.isChecked(),
+                use_special_characters=self.special_characters_checkbox.isChecked())
         else:
             self.reset_iterations()
             self.message_label.setText(
@@ -121,10 +130,11 @@ class MainWindow(QWidget):
             self.message_label.setVisible(True)
             return False
         password = self.generator.generate(
-            self.maser_password_edit.toPlainText(),
-            self.domain_edit.toPlainText(),
-            self.length_slider.sliderPosition(),
-            self.iterations
+            master_password=self.maser_password_edit.text(),
+            domain=self.domain_edit.text(),
+            username=self.username_edit.text(),
+            length=self.length_slider.sliderPosition(),
+            iterations=self.iterations
         )
         self.password.setText(password)
         self.password.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
@@ -167,8 +177,8 @@ class CtSesam(object):
             number //= len(self.password_characters)
         return password
 
-    def generate(self, master_password, domain, length, iterations):
-        hash_string = domain + master_password
+    def generate(self, master_password, domain, username='', length=10, iterations=4096):
+        hash_string = domain + username + master_password
         hashed_bytes = pbkdf2_hmac('sha512', hash_string.encode('utf-8'), self.salt, iterations)
         return self.convert_bytes_to_password(hashed_bytes, length)
 
