@@ -79,6 +79,7 @@ class MainWindow(QWidget):
         # Button
         self.generate_button = QPushButton("Erzeugen")
         self.generate_button.clicked.connect(self.generate_password)
+        self.generate_button.setAutoDefault(True)
         self.layout.addWidget(self.generate_button)
         # Password
         self.password_label = QLabel("&Passwort:")
@@ -114,9 +115,10 @@ class MainWindow(QWidget):
     def move_focus(self):
         line_edits = [self.maser_password_edit, self.domain_edit, self.username_edit]
         for i, edit in enumerate(line_edits):
-            if edit.hasFocus():
-                line_edits[(i + 1) % len(line_edits)].setFocus()
-                break
+            if edit.hasFocus() and i + 1 < len(line_edits):
+                line_edits[(i + 1)].setFocus()
+                return True
+        self.generate_button.setFocus()
 
     def generate_password(self):
         if len(self.domain_edit.text()) <= 0:
