@@ -116,7 +116,7 @@ class MainWindow(QWidget):
         line_edits = [self.maser_password_edit, self.domain_edit, self.username_edit]
         for i, edit in enumerate(line_edits):
             if edit.hasFocus() and i + 1 < len(line_edits):
-                line_edits[(i + 1)].setFocus()
+                line_edits[i + 1].setFocus()
                 return True
         self.generate_button.setFocus()
 
