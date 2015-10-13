@@ -1,12 +1,17 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from hashlib import pbkdf2_hmac
-
+import argparse
 import sys
 from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon
 from PySide.QtGui import QLabel, QLineEdit, QCheckBox, QSlider, QPushButton
 from PySide.QtCore import Qt
+
+from password_generator import CtSesam
+from preference_manager import PreferenceManager
+from kgk_manager import KgkManager
+from password_settings_manager import PasswordSettingsManager
+from crypter import Crypter
 
 
 class MainWindow(QWidget):
@@ -16,13 +21,15 @@ class MainWindow(QWidget):
         self.clipboard = clipboard
         self.setWindowIcon(QIcon('Logo_rendered_edited.png'))
         self.layout = QBoxLayout(QBoxLayout.TopToBottom, self)
-        self.generator = CtSesam()
-        self.iterations = 4096
+        self.preference_manager = PreferenceManager()
+        self.kgk_manager = KgkManager()
+        self.kgk_manager.set_preference_manager(self.preference_manager)
+        self.settings_manager = PasswordSettingsManager(self.preference_manager)
         # Master password
         self.master_password_label = QLabel("&Master-Passwort:")
         self.maser_password_edit = QLineEdit()
         self.maser_password_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.maser_password_edit.textChanged.connect(self.reset_iterations)
+        #self.maser_password_edit.textChanged.connect(self.reset_iterations)
         self.maser_password_edit.returnPressed.connect(self.move_focus)
         self.maser_password_edit.setMaximumHeight(28)
         self.master_password_label.setBuddy(self.maser_password_edit)
@@ -31,7 +38,7 @@ class MainWindow(QWidget):
         # Domain
         self.domain_label = QLabel("&Domain:")
         self.domain_edit = QLineEdit()
-        self.domain_edit.textChanged.connect(self.reset_iterations)
+        #self.domain_edit.textChanged.connect(self.reset_iterations)
         self.domain_edit.returnPressed.connect(self.move_focus)
         self.domain_edit.setMaximumHeight(28)
         self.domain_label.setBuddy(self.domain_edit)
@@ -40,7 +47,7 @@ class MainWindow(QWidget):
         # Username
         self.username_label = QLabel("&Username:")
         self.username_edit = QLineEdit()
-        self.username_edit.textChanged.connect(self.reset_iterations)
+        #self.username_edit.textChanged.connect(self.reset_iterations)
         self.username_edit.returnPressed.connect(self.move_focus)
         self.username_edit.setMaximumHeight(28)
         self.username_label.setBuddy(self.username_edit)
@@ -49,15 +56,15 @@ class MainWindow(QWidget):
         # Checkboxes
         self.special_characters_checkbox = QCheckBox("Sonderzeichen")
         self.special_characters_checkbox.setChecked(True)
-        self.special_characters_checkbox.stateChanged.connect(self.reset_iterations)
+        #self.special_characters_checkbox.stateChanged.connect(self.reset_iterations)
         self.layout.addWidget(self.special_characters_checkbox)
         self.letters_checkbox = QCheckBox("Buchstaben")
         self.letters_checkbox.setChecked(True)
-        self.letters_checkbox.stateChanged.connect(self.reset_iterations)
+        #self.letters_checkbox.stateChanged.connect(self.reset_iterations)
         self.layout.addWidget(self.letters_checkbox)
         self.digits_checkbox = QCheckBox("Zahlen")
         self.digits_checkbox.setChecked(True)
-        self.digits_checkbox.stateChanged.connect(self.reset_iterations)
+        #self.digits_checkbox.stateChanged.connect(self.reset_iterations)
         self.layout.addWidget(self.digits_checkbox)
         # Length slider
         self.length_label = QLabel("&Länge:")
@@ -90,11 +97,6 @@ class MainWindow(QWidget):
         self.password_label.setBuddy(self.password)
         self.layout.addWidget(self.password_label)
         self.layout.addWidget(self.password)
-        # Iteration display
-        self.message_label = QLabel()
-        self.message_label.setTextFormat(Qt.RichText)
-        self.message_label.setVisible(False)
-        self.layout.addWidget(self.message_label)
         # Window layout
         self.layout.addStretch()
         self.setGeometry(0, 30, 300, 400)
@@ -104,13 +106,6 @@ class MainWindow(QWidget):
 
     def length_slider_changed(self):
         self.length_display.setText(str(self.length_slider.sliderPosition()))
-        self.reset_iterations()
-
-    def reset_iterations(self):
-        self.iterations = 4096
-        self.message_label.setVisible(False)
-        self.password.setText('')
-        self.clipboard.setText('')
 
     def move_focus(self):
         line_edits = [self.maser_password_edit, self.domain_edit, self.username_edit]
@@ -122,32 +117,30 @@ class MainWindow(QWidget):
 
     def generate_password(self):
         if len(self.domain_edit.text()) <= 0:
-            self.reset_iterations()
             self.message_label.setText(
                 '<span style="font-size: 10px; color: #aa0000;">Bitte geben Sie eine Domain an.</span>')
             self.message_label.setVisible(True)
             return False
-        if self.letters_checkbox.isChecked() or \
-           self.digits_checkbox.isChecked() or \
-           self.special_characters_checkbox.isChecked():
-            self.generator.set_password_characters(
-                use_letters=self.letters_checkbox.isChecked(),
-                use_digits=self.digits_checkbox.isChecked(),
-                use_special_characters=self.special_characters_checkbox.isChecked())
-        else:
-            self.reset_iterations()
+        if not self.letters_checkbox.isChecked() and \
+           not self.digits_checkbox.isChecked() and \
+           not self.special_characters_checkbox.isChecked():
             self.message_label.setText(
                 '<span style="font-size: 10px; color: #aa0000;">Bei den aktuellen Einstellungen ' +
                 'kann kein Passwort berechnet werden.</span>')
             self.message_label.setVisible(True)
             return False
-        password = self.generator.generate(
-            master_password=self.maser_password_edit.text(),
-            domain=self.domain_edit.text(),
-            username=self.username_edit.text(),
-            length=self.length_slider.sliderPosition(),
-            iterations=self.iterations
-        )
+        setting = self.settings_manager.get_setting(self.domain_edit.text())
+        if not self.kgk_manager.has_kgk():
+            self.kgk_manager.create_new_kgk()
+            self.kgk_manager.create_and_save_new_kgk_block(self.kgk_manager.get_kgk_crypter(
+                password=self.maser_password_edit.text(),
+                salt=Crypter.createSalt()))
+        generator = CtSesam(setting.get_domain(),
+                            setting.get_username(),
+                            self.kgk_manager.get_kgk(),
+                            setting.get_salt(),
+                            setting.get_iterations())
+        password = generator.generate(setting)
         self.password.setText(password)
         self.password.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
         self.clipboard.setText(password)
@@ -155,46 +148,18 @@ class MainWindow(QWidget):
             '<span style="font-size: 10px; color: #888888;">Das Passwort wurde ' + str(self.iterations) +
             ' mal gehasht <br />und in die Zwischenablage kopiert.</span>')
         self.message_label.setVisible(True)
-        self.iterations += 1
 
-
-class CtSesam(object):
-    def __init__(self):
-        self.password_characters = []
-        self.set_password_characters()
-        self.salt = "pepper".encode('utf-8')
-
-    def set_password_characters(self, use_letters=True, use_digits=True, use_special_characters=True):
-        if not use_letters and not use_digits and not use_special_characters:
-            use_letters = True
-            use_digits = True
-            use_special_characters = True
-        lower_case_letters = list('abcdefghijklmnopqrstuvwxyz')
-        upper_case_letters = list('ABCDEFGHJKLMNPQRTUVWXYZ')
-        digits = list('0123456789')
-        special_characters = list('#!"§$%&/()[]{}=-_+*<>;:.')
-        self.password_characters = []
-        if use_letters:
-            self.password_characters += lower_case_letters + upper_case_letters
-        if use_digits:
-            self.password_characters += digits
-        if use_special_characters:
-            self.password_characters += special_characters
-
-    def convert_bytes_to_password(self, digest, length):
-        number = int.from_bytes(digest, byteorder='big')
-        password = ''
-        while number > 0 and len(password) < length:
-            password = password + self.password_characters[number % len(self.password_characters)]
-            number //= len(self.password_characters)
-        return password
-
-    def generate(self, master_password, domain, username='', length=10, iterations=4096):
-        hash_string = domain + username + master_password
-        hashed_bytes = pbkdf2_hmac('sha512', hash_string.encode('utf-8'), self.salt, iterations)
-        return self.convert_bytes_to_password(hashed_bytes, length)
-
-
-app = QApplication(sys.argv)
-window = MainWindow(app.clipboard())
-app.exec_()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate domain passwords from your masterpassword.")
+    parser.add_argument('-n', '--no-sync',
+                        action='store_const', const=True,
+                        help="Do not synchronize with a server.")
+    parser.add_argument('-u', '--update-sync-settings',
+                        action='store_const', const=True,
+                        help="Ask for server settings before synchronization.")
+    parser.add_argument('--master-password', help="Prefill the masterpassword field.")
+    parser.add_argument('-d', '--domain', help="Prefill the domain field.")
+    args = parser.parse_args()
+    app = QApplication(sys.argv)
+    window = MainWindow(app.clipboard())
+    app.exec_()
