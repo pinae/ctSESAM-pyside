@@ -6,6 +6,7 @@ import sys
 from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon
 from PySide.QtGui import QLabel, QLineEdit, QCheckBox, QSlider, QPushButton
 from PySide.QtCore import Qt
+from password_strength_selector import PasswordStrengthSelector
 
 from password_generator import CtSesam
 from preference_manager import PreferenceManager
@@ -25,12 +26,15 @@ class MainWindow(QWidget):
         self.kgk_manager = KgkManager()
         self.kgk_manager.set_preference_manager(self.preference_manager)
         self.settings_manager = PasswordSettingsManager(self.preference_manager)
+        self.setting = None
+        self.setting_dirty = False
         # Master password
         self.master_password_label = QLabel("&Master-Passwort:")
         self.maser_password_edit = QLineEdit()
         self.maser_password_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        #self.maser_password_edit.textChanged.connect(self.reset_iterations)
+        self.maser_password_edit.textChanged.connect(self.masterpassword_changed)
         self.maser_password_edit.returnPressed.connect(self.move_focus)
+        self.maser_password_edit.editingFinished.connect(self.masterpassword_entered)
         self.maser_password_edit.setMaximumHeight(28)
         self.master_password_label.setBuddy(self.maser_password_edit)
         self.layout.addWidget(self.master_password_label)
@@ -38,7 +42,7 @@ class MainWindow(QWidget):
         # Domain
         self.domain_label = QLabel("&Domain:")
         self.domain_edit = QLineEdit()
-        #self.domain_edit.textChanged.connect(self.reset_iterations)
+        self.domain_edit.textChanged.connect(self.domain_changed)
         self.domain_edit.returnPressed.connect(self.move_focus)
         self.domain_edit.setMaximumHeight(28)
         self.domain_label.setBuddy(self.domain_edit)
@@ -53,36 +57,17 @@ class MainWindow(QWidget):
         self.username_label.setBuddy(self.username_edit)
         self.layout.addWidget(self.username_label)
         self.layout.addWidget(self.username_edit)
-        # Checkboxes
-        self.special_characters_checkbox = QCheckBox("Sonderzeichen")
-        self.special_characters_checkbox.setChecked(True)
-        #self.special_characters_checkbox.stateChanged.connect(self.reset_iterations)
-        self.layout.addWidget(self.special_characters_checkbox)
-        self.letters_checkbox = QCheckBox("Buchstaben")
-        self.letters_checkbox.setChecked(True)
-        #self.letters_checkbox.stateChanged.connect(self.reset_iterations)
-        self.layout.addWidget(self.letters_checkbox)
-        self.digits_checkbox = QCheckBox("Zahlen")
-        self.digits_checkbox.setChecked(True)
-        #self.digits_checkbox.stateChanged.connect(self.reset_iterations)
-        self.layout.addWidget(self.digits_checkbox)
-        # Length slider
-        self.length_label = QLabel("&Länge:")
-        self.length_display = QLabel()
-        self.length_label_layout = QBoxLayout(QBoxLayout.LeftToRight)
-        self.length_label_layout.addWidget(self.length_label)
-        self.length_label_layout.addWidget(self.length_display)
-        self.length_label_layout.addStretch()
-        self.length_slider = QSlider(Qt.Horizontal)
-        self.length_slider.setMinimum(4)
-        self.length_slider.setMaximum(20)
-        self.length_slider.setPageStep(1)
-        self.length_slider.setValue(10)
-        self.length_display.setText(str(self.length_slider.sliderPosition()))
-        self.length_slider.valueChanged.connect(self.length_slider_changed)
-        self.length_label.setBuddy(self.length_slider)
-        self.layout.addLayout(self.length_label_layout)
-        self.layout.addWidget(self.length_slider)
+        # Password strength
+        self.strength_label = QLabel("&Passwortstärke:")
+        self.strength_selector = PasswordStrengthSelector()
+        self.strength_selector.set_min_length(4)
+        self.strength_selector.set_max_length(36)
+        self.strength_selector.setMinimumHeight(60)
+        self.strength_selector.strength_changed.connect(self.strength_changed)
+        self.strength_selector.setVisible(False)
+        self.strength_label.setBuddy(self.strength_selector)
+        self.layout.addWidget(self.strength_label)
+        self.layout.addWidget(self.strength_selector)
         # Button
         self.generate_button = QPushButton("Erzeugen")
         self.generate_button.clicked.connect(self.generate_password)
@@ -104,8 +89,37 @@ class MainWindow(QWidget):
         self.maser_password_edit.setFocus()
         self.show()
 
-    def length_slider_changed(self):
-        self.length_display.setText(str(self.length_slider.sliderPosition()))
+    def masterpassword_changed(self):
+        pass
+
+    def masterpassword_entered(self):
+        print("Finished Password:")
+        print(self.maser_password_edit.text())
+
+    def domain_changed(self):
+        if len(self.domain_edit.text()) > 0:
+            self.strength_label.setVisible(True)
+            self.strength_selector.setVisible(True)
+            self.generate_button.setVisible(self.setting_dirty)
+            self.password_label.setVisible(True)
+            self.password.setVisible(True)
+        else:
+            self.strength_label.setVisible(False)
+            self.strength_selector.setVisible(False)
+            self.generate_button.setVisible(False)
+            self.password_label.setVisible(False)
+            self.password.setVisible(False)
+
+    def domain_entered(self):
+        self.setting = self.settings_manager.get_setting(self.domain_edit.text())
+        self.username_edit.setText(self.setting.get_username())
+        self.strength_selector.set_length(self.setting.get_length())
+
+    def strength_changed(self, complexity, length):
+        if self.setting:
+            self.setting.set_length(length)
+        print(complexity)
+        print(length)
 
     def move_focus(self):
         line_edits = [self.maser_password_edit, self.domain_edit, self.username_edit]
