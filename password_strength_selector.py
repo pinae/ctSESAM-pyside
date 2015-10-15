@@ -131,6 +131,7 @@ class PasswordStrengthSelector(QtGui.QWidget):
         else:
             self.length = 0
             self.complexity = -1
+        self.repaint()
         self.strength_changed.emit(self.complexity, self.length)
 
     def get_complexity(self):
@@ -154,4 +155,5 @@ class PasswordStrengthSelector(QtGui.QWidget):
         else:
             self.complexity = -1
             self.length = 0
+        self.repaint()
         self.strength_changed.emit(self.complexity, self.length)
