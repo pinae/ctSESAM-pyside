@@ -4,7 +4,7 @@
 import argparse
 import sys
 from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon
-from PySide.QtGui import QLabel, QLineEdit, QCheckBox, QSlider, QPushButton
+from PySide.QtGui import QLabel, QLineEdit, QComboBox, QPushButton
 from PySide.QtCore import Qt
 from password_strength_selector import PasswordStrengthSelector
 
@@ -43,9 +43,11 @@ class MainWindow(QWidget):
         self.layout.addWidget(self.master_password_edit)
         # Domain
         self.domain_label = QLabel("&Domain:")
-        self.domain_edit = QLineEdit()
+        self.domain_edit = QComboBox()
+        self.domain_edit.setEditable(True)
         self.domain_edit.textChanged.connect(self.domain_changed)
-        self.domain_edit.returnPressed.connect(self.move_focus)
+        self.domain_edit.currentIndexChanged.connect(self.domain_changed)
+        self.domain_edit.lineEdit().returnPressed.connect(self.move_focus)
         self.domain_edit.setMaximumHeight(28)
         self.domain_label.setBuddy(self.domain_edit)
         self.layout.addWidget(self.domain_label)
@@ -107,10 +109,11 @@ class MainWindow(QWidget):
                 self.master_password_edit.text(),
                 self.preference_manager,
                 self.kgk_manager,
-                self.settings_manager)
+                self.settings_manager,
+                self.domain_edit)
 
     def domain_changed(self):
-        if len(self.domain_edit.text()) > 0:
+        if len(self.domain_edit.lineEdit().text()) > 0:
             self.username_label.setVisible(True)
             self.username_edit.setVisible(True)
             self.strength_label.setVisible(True)
@@ -118,8 +121,8 @@ class MainWindow(QWidget):
             self.generate_button.setVisible(self.setting_dirty)
             self.password_label.setVisible(True)
             self.password.setVisible(True)
-            if self.kgk_manager.has_kgk() and self.decrypt_kgk_task and not self.decrypt_kgk_task.is_running():
-                if self.domain_edit.text() in self.settings_manager.get_domain_list():
+            if self.kgk_manager.has_kgk() and (not self.decrypt_kgk_task or not self.decrypt_kgk_task.is_running()):
+                if self.domain_edit.lineEdit().text() in self.settings_manager.get_domain_list():
                     self.domain_entered()
         else:
             self.username_label.setVisible(False)
@@ -131,7 +134,8 @@ class MainWindow(QWidget):
             self.password.setVisible(False)
 
     def domain_entered(self):
-        self.setting = self.settings_manager.get_setting(self.domain_edit.text())
+        print("entered")
+        self.setting = self.settings_manager.get_setting(self.domain_edit.lineEdit().text())
         self.username_edit.setText(self.setting.get_username())
         self.strength_selector.set_length(self.setting.get_length())
         self.strength_selector.set_complexity(self.setting.get_complexity())
@@ -172,7 +176,7 @@ class MainWindow(QWidget):
 
 
     def old_generate_password(self):
-        if len(self.domain_edit.text()) <= 0:
+        if len(self.domain_edit.lineEdit().text()) <= 0:
             self.message_label.setText(
                 '<span style="font-size: 10px; color: #aa0000;">Bitte geben Sie eine Domain an.</span>')
             self.message_label.setVisible(True)
@@ -185,7 +189,7 @@ class MainWindow(QWidget):
                 'kann kein Passwort berechnet werden.</span>')
             self.message_label.setVisible(True)
             return False
-        setting = self.settings_manager.get_setting(self.domain_edit.text())
+        setting = self.settings_manager.get_setting(self.domain_edit.lineEdit().text())
         if not self.kgk_manager.has_kgk():
             self.kgk_manager.create_new_kgk()
             self.kgk_manager.create_and_save_new_kgk_block(self.kgk_manager.get_kgk_crypter(
