@@ -54,7 +54,7 @@ source_suffix = ['.rst', '.md']
 master_doc = 'index'
 
 # General information about the project.
-project = 'c\'t SESAM - python'
+project = 'c\'t SESAM - pyside'
 copyright = '2015, Johannes Merkert'
 author = 'Johannes Merkert'
 
@@ -109,7 +109,7 @@ pygments_style = 'sphinx'
 #keep_warnings = False
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
+todo_include_todos = True
 
 
 # -- Options for HTML output ----------------------------------------------
@@ -230,7 +230,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'ctSESAM-python.tex', 'c\'t SESAM - python Documentation',
+  (master_doc, 'ctSESAM-pyside.tex', 'c\'t SESAM - pyside Documentation',
    'Johannes Merkert', 'manual'),
 ]
 
@@ -260,7 +260,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'ctsesam-python', 'c\'t SESAM - python Documentation',
+    (master_doc, 'ctsesam-pyside', 'c\'t SESAM - pyside Documentation',
      [author], 1)
 ]
 
@@ -274,8 +274,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'ctSESAM-python', 'c\'t SESAM - python Documentation',
-   author, 'ctSESAM-python', 'One line description of project.',
+  (master_doc, 'ctSESAM-pyside', 'c\'t SESAM - pyside Documentation',
+   author, 'ctSESAM-pyside', 'c\'t SESAM password manager with PySide-powered gui',
    'Miscellaneous'),
 ]
 
