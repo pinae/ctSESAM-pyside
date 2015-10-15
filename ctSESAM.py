@@ -132,10 +132,20 @@ class MainWindow(QWidget):
 
     def domain_entered(self):
         self.setting = self.settings_manager.get_setting(self.domain_edit.text())
-        print(self.setting)
         self.username_edit.setText(self.setting.get_username())
         self.strength_selector.set_length(self.setting.get_length())
         self.strength_selector.set_complexity(self.setting.get_complexity())
+        self.generate_password()
+
+    def move_focus(self):
+        line_edits = [self.master_password_edit, self.domain_edit, self.username_edit]
+        for i, edit in enumerate(line_edits):
+            if edit.hasFocus() and i + 1 < len(line_edits):
+                line_edits[i + 1].setFocus()
+                return True
+        self.generate_button.setFocus()
+
+    def generate_password(self):
         generator = CtSesam(self.setting.get_domain(),
                             self.setting.get_username(),
                             self.kgk_manager.get_kgk(),
@@ -150,24 +160,18 @@ class MainWindow(QWidget):
         if self.setting:
             self.setting.set_username(self.username_edit.text())
             self.setting_dirty = True
+            self.generate_password()
 
     def strength_changed(self, complexity, length):
         if self.setting:
             self.setting.set_length(length)
             self.setting.set_complexity(complexity)
             self.setting_dirty = True
-
-    def move_focus(self):
-        line_edits = [self.master_password_edit, self.domain_edit, self.username_edit]
-        for i, edit in enumerate(line_edits):
-            if edit.hasFocus() and i + 1 < len(line_edits):
-                line_edits[i + 1].setFocus()
-                return True
-        self.generate_button.setFocus()
+            self.generate_password()
 
 
 
-    def generate_password(self):
+    def old_generate_password(self):
         if len(self.domain_edit.text()) <= 0:
             self.message_label.setText(
                 '<span style="font-size: 10px; color: #aa0000;">Bitte geben Sie eine Domain an.</span>')
