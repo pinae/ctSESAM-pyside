@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to c't SESAM - python's documentation!
+Welcome to c't SESAM - PySide's documentation!
 ==============================================
 
 c't SESAM is a password manager which calculates passwords from masterpasswords and domains using PBKDF2. There
