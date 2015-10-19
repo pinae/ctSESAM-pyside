@@ -20,6 +20,10 @@ class PasswordStrengthSelector(QtGui.QWidget):
         self.length = 0
         self.complexity = -1
         self.color_matrix = []
+        self.digit_count = 10
+        self.lower_count = 36
+        self.upper_count = 36
+        self.extra_count = 24
         self.calculate_width()
 
     def set_min_length(self, min_length):
@@ -42,13 +46,30 @@ class PasswordStrengthSelector(QtGui.QWidget):
         self.max_length = max_length
         self.calculate_width()
 
+    def set_extra_count(self, extra_count):
+        """
+        Sets the number of extra characters. This is used for the coloring.
+
+        :param extra_count: number of extra characters
+        :type extra_count: int
+        """
+        self.extra_count = extra_count
+        self.calculate_width()
+        self.repaint()
+
     def calculate_width(self):
         """
         Calculate the minimum width and the color matrix
         """
         self.setMinimumWidth(self.max_length - self.min_length)
         self.color_matrix = []
-        complexity = [10, 36, 36, 46, 72, 82, 106]
+        complexity = [self.digit_count,
+                      self.lower_count,
+                      self.upper_count,
+                      self.digit_count + self.lower_count,
+                      self.lower_count + self.upper_count,
+                      self.lower_count + self.upper_count + self.digit_count,
+                      self.lower_count + self.upper_count + self.digit_count + self.extra_count]
         complexity.reverse()
         for i in range(self.max_length-self.min_length+1):
             line = []
@@ -57,7 +78,7 @@ class PasswordStrengthSelector(QtGui.QWidget):
                 tianhe2_years = (pow(comp, (i+self.min_length))*0.4/3120000)/(60*60*24*365)
                 strength_red = 1-s/(s+math.log(tianhe2_years+1, 50))
                 strength_green = 1-s/(s+math.log(tianhe2_years+1, 1.2))
-                color = QtGui.QColor(int(round(255*(1.0-strength_red))), int(round(255*strength_green)), 0)
+                color = QtGui.QColor(int(round(215*(1.0-strength_red))), int(round(190*strength_green)), 0)
                 line.append(color)
             self.color_matrix.append(line)
 

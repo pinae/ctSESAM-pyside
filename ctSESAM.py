@@ -3,9 +3,9 @@
 
 import argparse
 import sys
-from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon
-from PySide.QtGui import QLabel, QLineEdit, QComboBox, QPushButton
-from PySide.QtCore import Qt
+from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon, QFrame, QPalette
+from PySide.QtGui import QLabel, QLineEdit, QComboBox, QPushButton, QToolButton
+from PySide.QtCore import Qt, QSize
 from password_strength_selector import PasswordStrengthSelector
 
 from password_generator import CtSesam
@@ -17,41 +17,93 @@ from decrypt_kgk_task import DecryptKgkTask
 
 
 class MainWindow(QWidget):
-    # noinspection PyUnresolvedReferences
+    master_password_label = None
+    master_password_edit = None
+    domain_label = None
+    domain_edit = None
+    username_label = None
+    username_edit = None
+    strength_label = None
+    strength_selector = None
+    generate_button = None
+    password_label = None
+    password = None
+    sync_button = None
+    copy_button = None
+    setting = None
+    decrypt_kgk_task = None
+
     def __init__(self, clipboard):
         super().__init__()
         self.clipboard = clipboard
         self.setWindowIcon(QIcon('Logo_rendered_edited.png'))
-        self.layout = QBoxLayout(QBoxLayout.TopToBottom, self)
+        layout = QBoxLayout(QBoxLayout.TopToBottom)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.preference_manager = PreferenceManager()
         self.kgk_manager = KgkManager()
         self.kgk_manager.set_preference_manager(self.preference_manager)
         self.settings_manager = PasswordSettingsManager(self.preference_manager)
-        self.setting = None
         self.setting_dirty = False
-        self.decrypt_kgk_task = None
+        # Header bar
+        header_bar = QFrame()
+        header_bar.setStyleSheet("QWidget { background: rgb(40, 40, 40); } " +
+                                 "QToolButton { background: rgb(40, 40, 40); }" +
+                                 "QToolTip { color: rgb(255, 255, 255); background-color: rgb(20, 20, 20); " +
+                                 "border: 1px solid white; }")
+        header_bar.setAutoFillBackground(True)
+        header_bar.setFixedHeight(45)
+        header_bar_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        header_bar_layout.addStretch()
+        header_bar.setLayout(header_bar_layout)
+        layout.addWidget(header_bar)
+        self.create_header_bar(header_bar_layout)
+        # Widget area
+        main_area = QFrame()
+        main_layout = QBoxLayout(QBoxLayout.TopToBottom)
+        main_area.setLayout(main_layout)
+        layout.addWidget(main_area)
+        self.create_main_area(main_layout)
+        # Window layout
+        layout.addStretch()
+        main_layout.addStretch()
+        self.setLayout(layout)
+        self.setGeometry(0, 30, 300, 400)
+        self.setWindowTitle("c't SESAM")
+        self.master_password_edit.setFocus()
+        self.show()
+
+    def create_header_bar(self, layout):
+        self.sync_button = QToolButton()
+        self.sync_button.setIconSize(QSize(30, 30))
+        self.sync_button.setIcon(QIcon("ic_action_sync.png"))
+        self.sync_button.setStyleSheet("border: 0px;")
+        self.sync_button.setToolTip("Sync")
+        layout.addWidget(self.sync_button)
+
+    # noinspection PyUnresolvedReferences
+    def create_main_area(self, layout):
         # Master password
-        self.master_password_label = QLabel("&Master-Passwort:")
+        master_password_label = QLabel("&Master-Passwort:")
         self.master_password_edit = QLineEdit()
         self.master_password_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self.master_password_edit.textChanged.connect(self.masterpassword_changed)
         self.master_password_edit.returnPressed.connect(self.move_focus)
         self.master_password_edit.editingFinished.connect(self.masterpassword_entered)
         self.master_password_edit.setMaximumHeight(28)
-        self.master_password_label.setBuddy(self.master_password_edit)
-        self.layout.addWidget(self.master_password_label)
-        self.layout.addWidget(self.master_password_edit)
+        master_password_label.setBuddy(self.master_password_edit)
+        layout.addWidget(master_password_label)
+        layout.addWidget(self.master_password_edit)
         # Domain
-        self.domain_label = QLabel("&Domain:")
+        domain_label = QLabel("&Domain:")
         self.domain_edit = QComboBox()
         self.domain_edit.setEditable(True)
         self.domain_edit.textChanged.connect(self.domain_changed)
         self.domain_edit.currentIndexChanged.connect(self.domain_changed)
         self.domain_edit.lineEdit().returnPressed.connect(self.move_focus)
         self.domain_edit.setMaximumHeight(28)
-        self.domain_label.setBuddy(self.domain_edit)
-        self.layout.addWidget(self.domain_label)
-        self.layout.addWidget(self.domain_edit)
+        domain_label.setBuddy(self.domain_edit)
+        layout.addWidget(domain_label)
+        layout.addWidget(self.domain_edit)
         # Username
         self.username_label = QLabel("&Username:")
         self.username_label.setVisible(False)
@@ -61,8 +113,8 @@ class MainWindow(QWidget):
         self.username_edit.setMaximumHeight(28)
         self.username_edit.setVisible(False)
         self.username_label.setBuddy(self.username_edit)
-        self.layout.addWidget(self.username_label)
-        self.layout.addWidget(self.username_edit)
+        layout.addWidget(self.username_label)
+        layout.addWidget(self.username_edit)
         # Password strength
         self.strength_label = QLabel("&Passwortstärke:")
         self.strength_label.setVisible(False)
@@ -73,14 +125,14 @@ class MainWindow(QWidget):
         self.strength_selector.strength_changed.connect(self.strength_changed)
         self.strength_selector.setVisible(False)
         self.strength_label.setBuddy(self.strength_selector)
-        self.layout.addWidget(self.strength_label)
-        self.layout.addWidget(self.strength_selector)
+        layout.addWidget(self.strength_label)
+        layout.addWidget(self.strength_selector)
         # Button
         self.generate_button = QPushButton("Erzeugen")
         self.generate_button.clicked.connect(self.generate_password)
         self.generate_button.setAutoDefault(True)
         self.generate_button.setVisible(False)
-        self.layout.addWidget(self.generate_button)
+        layout.addWidget(self.generate_button)
         # Password
         self.password_label = QLabel("&Passwort:")
         self.password_label.setVisible(False)
@@ -90,14 +142,8 @@ class MainWindow(QWidget):
         self.password.setFont(QFont("Helvetica", 18, QFont.Bold))
         self.password.setVisible(False)
         self.password_label.setBuddy(self.password)
-        self.layout.addWidget(self.password_label)
-        self.layout.addWidget(self.password)
-        # Window layout
-        self.layout.addStretch()
-        self.setGeometry(0, 30, 300, 400)
-        self.setWindowTitle("c't SESAM")
-        self.master_password_edit.setFocus()
-        self.show()
+        layout.addWidget(self.password_label)
+        layout.addWidget(self.password)
 
     def masterpassword_changed(self):
         self.kgk_manager.reset()
@@ -134,11 +180,11 @@ class MainWindow(QWidget):
             self.password.setVisible(False)
 
     def domain_entered(self):
-        print("entered")
         self.setting = self.settings_manager.get_setting(self.domain_edit.lineEdit().text())
         self.username_edit.setText(self.setting.get_username())
         self.strength_selector.set_length(self.setting.get_length())
         self.strength_selector.set_complexity(self.setting.get_complexity())
+        self.strength_selector.set_extra_count(len(self.setting.get_extra_character_set()))
         self.generate_password()
 
     def move_focus(self):
