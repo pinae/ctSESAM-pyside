@@ -3,10 +3,11 @@
 
 import argparse
 import sys
-from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon, QFrame, QPalette
+from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon, QFrame
 from PySide.QtGui import QLabel, QLineEdit, QComboBox, QPushButton, QToolButton
 from PySide.QtCore import Qt, QSize
 from password_strength_selector import PasswordStrengthSelector
+from settings_window import SettingsWindow
 
 from password_generator import CtSesam
 from preference_manager import PreferenceManager
@@ -29,9 +30,10 @@ class MainWindow(QWidget):
     password_label = None
     password = None
     sync_button = None
-    copy_button = None
+    clipboard_button = None
     setting = None
     decrypt_kgk_task = None
+    settings_window = None
 
     def __init__(self, clipboard):
         super().__init__()
@@ -67,18 +69,29 @@ class MainWindow(QWidget):
         layout.addStretch()
         main_layout.addStretch()
         self.setLayout(layout)
-        self.setGeometry(0, 30, 300, 400)
+        self.setGeometry(0, 26, 300, 450)
         self.setWindowTitle("c't SESAM")
         self.master_password_edit.setFocus()
         self.show()
 
+    # noinspection PyUnresolvedReferences
     def create_header_bar(self, layout):
         self.sync_button = QToolButton()
         self.sync_button.setIconSize(QSize(30, 30))
         self.sync_button.setIcon(QIcon("ic_action_sync.png"))
         self.sync_button.setStyleSheet("border: 0px;")
         self.sync_button.setToolTip("Sync")
+        self.sync_button.clicked.connect(self.show_sync_settings)
+        self.sync_button.setVisible(False)
         layout.addWidget(self.sync_button)
+        self.clipboard_button = QToolButton()
+        self.clipboard_button.setIconSize(QSize(30, 30))
+        self.clipboard_button.setIcon(QIcon("ic_action_copy.png"))
+        self.clipboard_button.setStyleSheet("border: 0px;")
+        self.clipboard_button.setToolTip("in die Zwischenablage")
+        self.clipboard_button.clicked.connect(self.copy_to_clipboard)
+        self.clipboard_button.setVisible(False)
+        layout.addWidget(self.clipboard_button)
 
     # noinspection PyUnresolvedReferences
     def create_main_area(self, layout):
@@ -148,6 +161,11 @@ class MainWindow(QWidget):
     def masterpassword_changed(self):
         self.kgk_manager.reset()
         self.decrypt_kgk_task = None
+        self.clipboard_button.setVisible(False)
+        if len(self.master_password_edit.text()) > 0:
+            self.sync_button.setVisible(True)
+        else:
+            self.sync_button.setVisible(False)
 
     def masterpassword_entered(self):
         if not self.decrypt_kgk_task:
@@ -178,6 +196,7 @@ class MainWindow(QWidget):
             self.generate_button.setVisible(False)
             self.password_label.setVisible(False)
             self.password.setVisible(False)
+            self.clipboard_button.setVisible(False)
 
     def domain_entered(self):
         self.setting = self.settings_manager.get_setting(self.domain_edit.lineEdit().text())
@@ -204,7 +223,10 @@ class MainWindow(QWidget):
         password = generator.generate(self.setting)
         self.password.setText(password)
         self.password.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
-        self.clipboard.setText(password)
+        self.clipboard_button.setVisible(True)
+
+    def copy_to_clipboard(self):
+        self.clipboard.setText(self.password.text())
 
     def username_changed(self):
         if self.setting:
@@ -218,6 +240,11 @@ class MainWindow(QWidget):
             self.setting.set_complexity(complexity)
             self.setting_dirty = True
             self.generate_password()
+
+    def show_sync_settings(self):
+        self.settings_window = SettingsWindow(self.settings_manager)
+
+
 
 
 
