@@ -14,8 +14,8 @@ class SettingsWindow(QDialog):
     certificate_loaded = Signal()
 
     # noinspection PyUnresolvedReferences
-    def __init__(self, settings_manager, network_access_manager):
-        self.settings_manager = settings_manager
+    def __init__(self, sync_manager, network_access_manager, url=None, username=None, password=None):
+        self.sync_manager = sync_manager
         self.nam = network_access_manager
         self.certificate = ""
         self.replies = set()
@@ -28,6 +28,8 @@ class SettingsWindow(QDialog):
         # Widgets
         url_label = QLabel("&URL des c't SESAM Sync Server:")
         self.url_edit = QLineEdit()
+        if url:
+            self.url_edit.setText(url)
         self.url_edit.setMaximumHeight(28)
         self.url_edit.textChanged.connect(self.url_changed)
         url_label.setBuddy(self.url_edit)
@@ -35,6 +37,8 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.url_edit)
         username_label = QLabel("&Benutzername:")
         self.username_edit = QLineEdit()
+        if username:
+            self.username_edit.setText(username)
         self.username_edit.setMaximumHeight(28)
         self.username_edit.textChanged.connect(self.save_settings)
         username_label.setBuddy(self.username_edit)
@@ -42,6 +46,8 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.username_edit)
         password_label = QLabel("&Passwort:")
         self.password_edit = QLineEdit()
+        if password:
+            self.password_edit.setText(password)
         self.password_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_edit.setMaximumHeight(28)
         self.password_edit.textChanged.connect(self.save_settings)
@@ -61,10 +67,6 @@ class SettingsWindow(QDialog):
         layout.addStretch()
         self.setLayout(layout)
         self.setModal(True)
-        self.show()
-        self.url_edit.setText("https://ersatzworld.net/ctSESAM/")
-        self.username_edit.setText("inter")
-        self.password_edit.setText("op")
 
     def url_changed(self):
         if self.certificate:
@@ -85,7 +87,12 @@ class SettingsWindow(QDialog):
         self.save_settings()
 
     def save_settings(self):
-        self.settings_manager.sync_manager.set_server_address(self.url_edit.text())
+        self.sync_manager.set_server_address(self.url_edit.text())
+        self.sync_manager.set_username(self.username_edit.text())
+        self.sync_manager.set_password(self.password_edit.text())
+        if self.certificate:
+            self.sync_manager.set_certificate(str(self.certificate))
+            self.sync_manager.create_sync()
 
     def test_connection(self):
         self.message.setText('<span style="font-size: 10px; color: #000000;">' +

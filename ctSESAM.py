@@ -9,12 +9,12 @@ from PySide.QtCore import Qt, QSize
 from PySide.QtNetwork import QNetworkAccessManager
 from password_strength_selector import PasswordStrengthSelector
 from settings_window import SettingsWindow
+from base64 import b64decode
 
 from password_generator import CtSesam
 from preference_manager import PreferenceManager
 from kgk_manager import KgkManager
 from password_settings_manager import PasswordSettingsManager
-from crypter import Crypter
 from decrypt_kgk_task import DecryptKgkTask
 
 
@@ -47,7 +47,7 @@ class MainWindow(QWidget):
         self.kgk_manager = KgkManager()
         self.kgk_manager.set_preference_manager(self.preference_manager)
         self.settings_manager = PasswordSettingsManager(self.preference_manager)
-        self.setting_dirty = False
+        self.setting_dirty = True
         # Header bar
         header_bar = QFrame()
         header_bar.setStyleSheet("QWidget { background: rgb(40, 40, 40); } " +
@@ -71,7 +71,7 @@ class MainWindow(QWidget):
         layout.addStretch()
         main_layout.addStretch()
         self.setLayout(layout)
-        self.setGeometry(0, 26, 300, 450)
+        self.setGeometry(0, 25, 300, 450)
         self.setWindowTitle("c't SESAM")
         self.master_password_edit.setFocus()
         self.show()
@@ -83,7 +83,7 @@ class MainWindow(QWidget):
         self.sync_button.setIcon(QIcon("ic_action_sync.png"))
         self.sync_button.setStyleSheet("border: 0px;")
         self.sync_button.setToolTip("Sync")
-        self.sync_button.clicked.connect(self.show_sync_settings)
+        self.sync_button.clicked.connect(self.sync_clicked)
         self.sync_button.setVisible(False)
         layout.addWidget(self.sync_button)
         self.clipboard_button = QToolButton()
@@ -112,8 +112,8 @@ class MainWindow(QWidget):
         domain_label = QLabel("&Domain:")
         self.domain_edit = QComboBox()
         self.domain_edit.setEditable(True)
-        self.domain_edit.textChanged.connect(self.domain_changed)
-        self.domain_edit.currentIndexChanged.connect(self.domain_changed)
+        self.domain_edit.textChanged.connect(self.set_visibilities)
+        self.domain_edit.currentIndexChanged.connect(self.set_visibilities)
         self.domain_edit.lineEdit().returnPressed.connect(self.move_focus)
         self.domain_edit.setMaximumHeight(28)
         domain_label.setBuddy(self.domain_edit)
@@ -137,6 +137,8 @@ class MainWindow(QWidget):
         self.strength_selector.set_min_length(4)
         self.strength_selector.set_max_length(36)
         self.strength_selector.setMinimumHeight(60)
+        self.strength_selector.set_length(12)
+        self.strength_selector.set_complexity(6)
         self.strength_selector.strength_changed.connect(self.strength_changed)
         self.strength_selector.setVisible(False)
         self.strength_label.setBuddy(self.strength_selector)
@@ -144,7 +146,7 @@ class MainWindow(QWidget):
         layout.addWidget(self.strength_selector)
         # Button
         self.generate_button = QPushButton("Erzeugen")
-        self.generate_button.clicked.connect(self.generate_password)
+        self.generate_button.clicked.connect(self.generate_button_pressed)
         self.generate_button.setAutoDefault(True)
         self.generate_button.setVisible(False)
         layout.addWidget(self.generate_button)
@@ -178,7 +180,7 @@ class MainWindow(QWidget):
                 self.settings_manager,
                 self.domain_edit)
 
-    def domain_changed(self):
+    def set_visibilities(self):
         if len(self.domain_edit.lineEdit().text()) > 0:
             self.username_label.setVisible(True)
             self.username_edit.setVisible(True)
@@ -189,6 +191,7 @@ class MainWindow(QWidget):
             self.password.setVisible(True)
             if self.kgk_manager.has_kgk() and (not self.decrypt_kgk_task or not self.decrypt_kgk_task.is_running()):
                 if self.domain_edit.lineEdit().text() in self.settings_manager.get_domain_list():
+                    self.setting_dirty = False
                     self.domain_entered()
         else:
             self.username_label.setVisible(False)
@@ -216,7 +219,22 @@ class MainWindow(QWidget):
                 return True
         self.generate_button.setFocus()
 
+    def generate_button_pressed(self):
+        self.setting = self.settings_manager.get_setting(self.domain_edit.lineEdit().text())
+        self.setting.set_username(self.username_edit.text())
+        self.setting.set_length(self.strength_selector.get_length())
+        self.setting.set_complexity(self.strength_selector.get_complexity())
+        self.setting_dirty = False
+        self.set_visibilities()
+        self.generate_password()
+
     def generate_password(self):
+        if not self.kgk_manager.has_kgk():
+            self.kgk_manager.create_new_kgk()
+            self.kgk_manager.create_and_save_new_kgk_block()
+        if not self.kgk_manager.kgk_crypter or not self.kgk_manager.salt:
+            self.kgk_manager.get_kgk_crypter(self.master_password_edit.text().encode('utf-8'),
+                                             self.kgk_manager.get_kgk_crypter_salt())
         generator = CtSesam(self.setting.get_domain(),
                             self.setting.get_username(),
                             self.kgk_manager.get_kgk(),
@@ -226,6 +244,7 @@ class MainWindow(QWidget):
         self.password.setText(password)
         self.password.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
         self.clipboard_button.setVisible(True)
+        self.settings_manager.store_settings(self.kgk_manager)
 
     def copy_to_clipboard(self):
         self.clipboard.setText(self.password.text())
@@ -243,52 +262,40 @@ class MainWindow(QWidget):
             self.setting_dirty = True
             self.generate_password()
 
+    # noinspection PyUnresolvedReferences
+    def sync_clicked(self):
+        if not self.settings_manager.sync_manager.has_settings():
+            self.show_sync_settings()
+        else:
+            print("Sync Now!")
+            pull_successful, data = self.settings_manager.sync_manager.pull()
+            if pull_successful and len(data) > 0:
+                remote_kgk_manager = KgkManager()
+                remote_kgk_manager.update_from_blob(self.master_password_edit.text().encode('utf-8'), b64decode(data))
+                if len(self.preference_manager.get_kgk_block()) == 112 and \
+                   remote_kgk_manager.has_kgk() and self.kgk_manager.has_kgk() and \
+                   self.kgk_manager.get_kgk() != remote_kgk_manager.get_kgk():
+                    print("Lokal und auf dem Server gibt es unterschiedliche KGKs. Das ist ein Problem!")
+                else:
+                    if len(self.preference_manager.get_kgk_block()) != 112:
+                        kgk_manager = remote_kgk_manager
+                        kgk_manager.set_preference_manager(self.preference_manager)
+                        kgk_manager.store_local_kgk_block()
+                    self.settings_manager.update_from_export_data(remote_kgk_manager, b64decode(data))
+                    for i in reversed(range(self.domain_edit.count())):
+                        self.domain_edit.removeItem(i)
+                    self.domain_edit.insertItems(0, self.settings_manager.get_domain_list())
+                    self.domain_edit.textChanged.emit(self.domain_edit.lineEdit().text())
+            self.settings_manager.store_settings(self.kgk_manager)
+
+    # noinspection PyUnresolvedReferences
     def show_sync_settings(self):
-        self.settings_window = SettingsWindow(self.settings_manager, self.nam)
-
-
-
-
-
-    def old_generate_password(self):
-        if len(self.domain_edit.lineEdit().text()) <= 0:
-            self.message_label.setText(
-                '<span style="font-size: 10px; color: #aa0000;">Bitte geben Sie eine Domain an.</span>')
-            self.message_label.setVisible(True)
-            return False
-        if not self.letters_checkbox.isChecked() and \
-           not self.digits_checkbox.isChecked() and \
-           not self.special_characters_checkbox.isChecked():
-            self.message_label.setText(
-                '<span style="font-size: 10px; color: #aa0000;">Bei den aktuellen Einstellungen ' +
-                'kann kein Passwort berechnet werden.</span>')
-            self.message_label.setVisible(True)
-            return False
-        setting = self.settings_manager.get_setting(self.domain_edit.lineEdit().text())
-        if not self.kgk_manager.has_kgk():
-            self.kgk_manager.create_new_kgk()
-            self.kgk_manager.create_and_save_new_kgk_block(self.kgk_manager.get_kgk_crypter(
-                password=self.master_password_edit.text(),
-                salt=Crypter.createSalt()))
-        generator = CtSesam(setting.get_domain(),
-                            setting.get_username(),
-                            self.kgk_manager.get_kgk(),
-                            setting.get_salt(),
-                            setting.get_iterations())
-        password = generator.generate(setting)
-        self.password.setText(password)
-        self.password.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
-        self.clipboard.setText(password)
-        self.message_label.setText(
-            '<span style="font-size: 10px; color: #888888;">Das Passwort wurde ' + str(self.iterations) +
-            ' mal gehasht <br />und in die Zwischenablage kopiert.</span>')
-        self.message_label.setVisible(True)
+        self.settings_window = SettingsWindow(self.settings_manager.sync_manager, self.nam, "https://ersatzworld.net/ctSESAM/", "inter", "op")
+        self.settings_window.finished.connect(self.sync_clicked)
+        self.settings_window.show()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate domain passwords from your masterpassword.")
-    parser.add_argument('-n', '--no-sync',
-                        action='store_const', const=True,
-                        help="Do not synchronize with a server.")
     parser.add_argument('-u', '--update-sync-settings',
                         action='store_const', const=True,
                         help="Ask for server settings before synchronization.")
