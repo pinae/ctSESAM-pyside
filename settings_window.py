@@ -18,9 +18,10 @@ class SettingsWindow(QDialog):
         self.settings_manager = settings_manager
         self.nam = network_access_manager
         self.certificate = ""
+        self.replies = set()
         super().__init__()
         self.setWindowIcon(QIcon('Logo_sync.png'))
-        self.setGeometry(70, 80, 300, 400)
+        self.setGeometry(70, 60, 300, 250)
         self.setWindowTitle("c't SESAM Sync Settings")
         layout = QBoxLayout(QBoxLayout.TopToBottom)
         self.certificate_loaded.connect(self.test_connection)
@@ -28,7 +29,7 @@ class SettingsWindow(QDialog):
         url_label = QLabel("&URL des c't SESAM Sync Server:")
         self.url_edit = QLineEdit()
         self.url_edit.setMaximumHeight(28)
-        self.url_edit.textChanged.connect(self.save_settings)
+        self.url_edit.textChanged.connect(self.url_changed)
         url_label.setBuddy(self.url_edit)
         layout.addWidget(url_label)
         layout.addWidget(self.url_edit)
@@ -50,7 +51,11 @@ class SettingsWindow(QDialog):
         self.test_button = QPushButton("Verbindung testen")
         self.test_button.clicked.connect(self.test_connection)
         layout.addWidget(self.test_button)
-        self.message = QLabel("Message")
+        self.message = QLabel("")
+        if not self.certificate:
+            self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
+                                 'Kein Zertifikat vorhanden.' +
+                                 '</span>')
         layout.addWidget(self.message)
         # Show the window
         layout.addStretch()
@@ -61,10 +66,31 @@ class SettingsWindow(QDialog):
         self.username_edit.setText("inter")
         self.password_edit.setText("op")
 
+    def url_changed(self):
+        if self.certificate:
+            cert = QSslCertificate(encoded=self.certificate, format=QSsl.Pem)
+            domain_list = [cert.subjectInfo(cert.SubjectInfo.CommonName)]
+            for key in cert.alternateSubjectNames().keys():
+                if type(key) == str and key[:3] == "DNS":
+                    domain_list.append(cert.alternateSubjectNames()[key])
+            if extract_full_domain(self.url_edit.text()) not in domain_list:
+                self.certificate = ""
+                self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
+                                     'Kein Zertifikat für diese url vorhanden.' +
+                                     '</span>')
+        else:
+            self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
+                                 'Kein Zertifikat für diese url vorhanden.' +
+                                 '</span>')
+        self.save_settings()
+
     def save_settings(self):
         self.settings_manager.sync_manager.set_server_address(self.url_edit.text())
 
     def test_connection(self):
+        self.message.setText('<span style="font-size: 10px; color: #000000;">' +
+                             'Verbindung wird getestet.' +
+                             '</span>')
         self.nam.finished.connect(self.test_reply)
         self.nam.sslErrors.connect(self.ssl_errors)
         ssl_config = QSslConfiguration().defaultConfiguration()
@@ -72,6 +98,8 @@ class SettingsWindow(QDialog):
         if self.certificate:
             certificate = QSslCertificate(encoded=self.certificate, format=QSsl.Pem)
             ssl_config.setCaCertificates([certificate])
+        else:
+            ssl_config.setCaCertificates([])
         url = QUrl(self.url_edit.text())
         url.setPath("/".join(filter(bool, (url.path() + "/ajax/read.php").split("/"))))
         request = QNetworkRequest(url)
@@ -80,9 +108,13 @@ class SettingsWindow(QDialog):
                              "Basic ".encode('utf-8') +
                              b64encode((self.username_edit.text() + ":" + self.password_edit.text()).encode('utf-8')))
         request.setHeader(QNetworkRequest.ContentTypeHeader, "application/x-www-form-urlencoded")
-        self.nam.post(request, QByteArray())
+        self.replies.add(self.nam.post(request, QByteArray()))
 
-    def ssl_errors(self, reply, errors):
+    def ssl_errors(self, reply):
+        try:
+            self.replies.remove(reply)
+        except KeyError:
+            return False
         cert = reply.sslConfiguration().peerCertificateChain()[-1]
         if not cert.isValid():
             self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
@@ -119,6 +151,8 @@ class SettingsWindow(QDialog):
         self.certificate_loaded.emit()
 
     def test_reply(self, reply):
+        if reply not in self.replies:
+            return False
         if reply.error() == reply.NetworkError.AuthenticationRequiredError:
             self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
                                  'Benutzername oder Passwort stimmen nicht.' +
@@ -136,4 +170,3 @@ class SettingsWindow(QDialog):
             self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
                                  'Vom Syncserver kam eine Antwort aber kein OK.' +
                                  '</span>')
-
