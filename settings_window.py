@@ -1,19 +1,29 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from PySide.QtGui import QDialog, QIcon, QBoxLayout, QLabel, QLineEdit, QPushButton
-from get_certificate_chain import GetCertificateTask
+from PySide.QtCore import QByteArray, QUrl, QCryptographicHash, Signal
+from PySide.QtGui import QDialog, QIcon, QBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
+from PySide.QtNetwork import QNetworkRequest, QSsl, QSslCertificate, QSslConfiguration, QSslSocket
+from domain_extractor import extract_full_domain
+from base64 import b64encode
+import json
+import re
 
 
 class SettingsWindow(QDialog):
+    certificate_loaded = Signal()
+
     # noinspection PyUnresolvedReferences
-    def __init__(self, settings_manager):
+    def __init__(self, settings_manager, network_access_manager):
         self.settings_manager = settings_manager
+        self.nam = network_access_manager
+        self.certificate = ""
         super().__init__()
         self.setWindowIcon(QIcon('Logo_sync.png'))
-        self.setGeometry(50, 80, 300, 400)
+        self.setGeometry(70, 80, 300, 400)
         self.setWindowTitle("c't SESAM Sync Settings")
         layout = QBoxLayout(QBoxLayout.TopToBottom)
+        self.certificate_loaded.connect(self.test_connection)
         # Widgets
         url_label = QLabel("&URL des c't SESAM Sync Server:")
         self.url_edit = QLineEdit()
@@ -38,8 +48,10 @@ class SettingsWindow(QDialog):
         layout.addWidget(password_label)
         layout.addWidget(self.password_edit)
         self.test_button = QPushButton("Verbindung testen")
-        self.test_button.clicked.connect(self.get_certificate)
+        self.test_button.clicked.connect(self.test_connection)
         layout.addWidget(self.test_button)
+        self.message = QLabel("Message")
+        layout.addWidget(self.message)
         # Show the window
         layout.addStretch()
         self.setLayout(layout)
@@ -52,5 +64,76 @@ class SettingsWindow(QDialog):
     def save_settings(self):
         self.settings_manager.sync_manager.set_server_address(self.url_edit.text())
 
-    def get_certificate(self):
-        GetCertificateTask(self.url_edit.text(), self.username_edit.text(), self.password_edit.text())
+    def test_connection(self):
+        self.nam.finished.connect(self.test_reply)
+        self.nam.sslErrors.connect(self.ssl_errors)
+        ssl_config = QSslConfiguration().defaultConfiguration()
+        ssl_config.setCiphers(QSslSocket().supportedCiphers())
+        if self.certificate:
+            certificate = QSslCertificate(encoded=self.certificate, format=QSsl.Pem)
+            ssl_config.setCaCertificates([certificate])
+        url = QUrl(self.url_edit.text())
+        url.setPath("/".join(filter(bool, (url.path() + "/ajax/read.php").split("/"))))
+        request = QNetworkRequest(url)
+        request.setSslConfiguration(ssl_config)
+        request.setRawHeader("Authorization",
+                             "Basic ".encode('utf-8') +
+                             b64encode((self.username_edit.text() + ":" + self.password_edit.text()).encode('utf-8')))
+        request.setHeader(QNetworkRequest.ContentTypeHeader, "application/x-www-form-urlencoded")
+        self.nam.post(request, QByteArray())
+
+    def ssl_errors(self, reply, errors):
+        cert = reply.sslConfiguration().peerCertificateChain()[-1]
+        if not cert.isValid():
+            self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
+                                 'Das Zertifikat ist nicht gültig.' +
+                                 '</span>')
+            return False
+        domain_list = [cert.subjectInfo(cert.SubjectInfo.CommonName)]
+        for key in cert.alternateSubjectNames().keys():
+            if type(key) == str and key[:3] == "DNS":
+                domain_list.append(cert.alternateSubjectNames()[key])
+        if extract_full_domain(self.url_edit.text()) not in domain_list:
+            self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
+                                 'Das Zertifikat wurde für eine andere Domain ausgestellt.' +
+                                 '</span>')
+            return False
+        message_box = QMessageBox()
+        message_box.setText("Ein unbekanntes CA-Zertifikat wurde gefunden.")
+        message_box.setInformativeText(
+            "Das Zertifikat hat den Fingerabdruck " +
+            ":".join(re.findall("(.{2})", str(cert.digest(QCryptographicHash.Sha1).toHex().toUpper()))) +
+            ". Möchten Sie diesem Zertifikat vertrauen?")
+        message_box.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
+        message_box.setDefaultButton(QMessageBox.Yes)
+        answer = message_box.exec_()
+        if answer != QMessageBox.Yes:
+            self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
+                                 'Sie haben dem Zertifikat nicht vertraut.' +
+                                 '</span>')
+            return False
+        if not self.certificate:
+            reply.ignoreSslErrors()
+        self.certificate = cert.toPem()
+        self.save_settings()
+        self.certificate_loaded.emit()
+
+    def test_reply(self, reply):
+        if reply.error() == reply.NetworkError.AuthenticationRequiredError:
+            self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
+                                 'Benutzername oder Passwort stimmen nicht.' +
+                                 '</span>')
+            return False
+        content = reply.readAll()
+        if content.isEmpty():
+            return False
+        reply_data = json.loads(str(content))
+        if "status" in reply_data and reply_data["status"] == "ok":
+            self.message.setText('<span style="font-size: 10px; color: #00AA00;">' +
+                                 'Verbindung erfolgreich getestet.' +
+                                 '</span>')
+        else:
+            self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
+                                 'Vom Syncserver kam eine Antwort aber kein OK.' +
+                                 '</span>')
+

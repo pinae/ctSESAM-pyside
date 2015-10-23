@@ -6,6 +6,7 @@ import sys
 from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon, QFrame
 from PySide.QtGui import QLabel, QLineEdit, QComboBox, QPushButton, QToolButton
 from PySide.QtCore import Qt, QSize
+from PySide.QtNetwork import QNetworkAccessManager
 from password_strength_selector import PasswordStrengthSelector
 from settings_window import SettingsWindow
 
@@ -38,6 +39,7 @@ class MainWindow(QWidget):
     def __init__(self, clipboard):
         super().__init__()
         self.clipboard = clipboard
+        self.nam = QNetworkAccessManager()
         self.setWindowIcon(QIcon('Logo_rendered_edited.png'))
         layout = QBoxLayout(QBoxLayout.TopToBottom)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -242,7 +244,7 @@ class MainWindow(QWidget):
             self.generate_password()
 
     def show_sync_settings(self):
-        self.settings_window = SettingsWindow(self.settings_manager)
+        self.settings_window = SettingsWindow(self.settings_manager, self.nam)
 
 
 
