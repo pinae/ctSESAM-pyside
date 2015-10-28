@@ -7,7 +7,7 @@ python:
 addons:
   apt:
     packages:
-    - qt5-default
+    - qt4-default
 install: "pip install -r requirements.txt"
 # command to run tests
 script: nosetests
