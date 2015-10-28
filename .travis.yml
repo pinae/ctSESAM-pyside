@@ -8,7 +8,7 @@ addons:
   apt:
     packages:
     - qt4-qmake
-    - qt4-dev-tools
+    - libqt4-dev
 install: "pip install -r requirements.txt"
 # command to run tests
 script: nosetests
