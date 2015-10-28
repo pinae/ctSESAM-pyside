@@ -112,8 +112,8 @@ class MainWindow(QWidget):
         domain_label = QLabel("&Domain:")
         self.domain_edit = QComboBox()
         self.domain_edit.setEditable(True)
-        self.domain_edit.textChanged.connect(self.set_visibilities)
-        self.domain_edit.currentIndexChanged.connect(self.set_visibilities)
+        self.domain_edit.textChanged.connect(self.domain_changed)
+        self.domain_edit.currentIndexChanged.connect(self.domain_changed)
         self.domain_edit.lineEdit().returnPressed.connect(self.move_focus)
         self.domain_edit.setMaximumHeight(28)
         domain_label.setBuddy(self.domain_edit)
@@ -172,7 +172,7 @@ class MainWindow(QWidget):
             self.sync_button.setVisible(False)
 
     def masterpassword_entered(self):
-        if not self.decrypt_kgk_task:
+        if len(self.master_password_edit.text()) > 0 and not self.decrypt_kgk_task:
             self.decrypt_kgk_task = DecryptKgkTask(
                 self.master_password_edit.text(),
                 self.preference_manager,
@@ -189,10 +189,6 @@ class MainWindow(QWidget):
             self.generate_button.setVisible(self.setting_dirty)
             self.password_label.setVisible(True)
             self.password.setVisible(True)
-            if self.kgk_manager.has_kgk() and (not self.decrypt_kgk_task or not self.decrypt_kgk_task.is_running()):
-                if self.domain_edit.lineEdit().text() in self.settings_manager.get_domain_list():
-                    self.setting_dirty = False
-                    self.domain_entered()
         else:
             self.username_label.setVisible(False)
             self.username_edit.setVisible(False)
@@ -203,12 +199,28 @@ class MainWindow(QWidget):
             self.password.setVisible(False)
             self.clipboard_button.setVisible(False)
 
+    def domain_changed(self):
+        if self.setting and self.setting_dirty:
+            self.setting.new_salt()
+        self.password.setText("")
+        self.clipboard_button.setVisible(False)
+        self.set_visibilities()
+        if self.kgk_manager.has_kgk() and (not self.decrypt_kgk_task or not self.decrypt_kgk_task.is_running()) and \
+           len(self.domain_edit.lineEdit().text()) > 0 and \
+           self.domain_edit.lineEdit().text() in self.settings_manager.get_domain_list():
+            self.domain_entered()
+
     def domain_entered(self):
+        self.setting_dirty = self.domain_edit.lineEdit().text() not in self.settings_manager.get_domain_list()
         self.setting = self.settings_manager.get_setting(self.domain_edit.lineEdit().text())
+        self.username_edit.blockSignals(True)
         self.username_edit.setText(self.setting.get_username())
+        self.username_edit.blockSignals(False)
+        self.strength_selector.blockSignals(True)
         self.strength_selector.set_length(self.setting.get_length())
         self.strength_selector.set_complexity(self.setting.get_complexity())
         self.strength_selector.set_extra_count(len(self.setting.get_extra_character_set()))
+        self.strength_selector.blockSignals(False)
         self.generate_password()
 
     def move_focus(self):
@@ -225,7 +237,6 @@ class MainWindow(QWidget):
         self.setting.set_length(self.strength_selector.get_length())
         self.setting.set_complexity(self.strength_selector.get_complexity())
         self.setting_dirty = False
-        self.set_visibilities()
         self.generate_password()
 
     def generate_password(self):
@@ -251,15 +262,19 @@ class MainWindow(QWidget):
 
     def username_changed(self):
         if self.setting:
-            self.setting.set_username(self.username_edit.text())
-            self.setting_dirty = True
+            if self.setting.get_username() != self.username_edit.text():
+                self.setting.set_username(self.username_edit.text())
+                self.setting_dirty = True
             self.generate_password()
 
     def strength_changed(self, complexity, length):
         if self.setting:
-            self.setting.set_length(length)
-            self.setting.set_complexity(complexity)
-            self.setting_dirty = True
+            if self.setting.get_length() != length:
+                self.setting.set_length(length)
+                self.setting_dirty = True
+            if self.setting.get_complexity() != complexity:
+                self.setting.set_complexity(complexity)
+                self.setting_dirty = True
             self.generate_password()
 
     # noinspection PyUnresolvedReferences
@@ -290,7 +305,8 @@ class MainWindow(QWidget):
 
     # noinspection PyUnresolvedReferences
     def show_sync_settings(self):
-        self.settings_window = SettingsWindow(self.settings_manager.sync_manager, self.nam, "https://ersatzworld.net/ctSESAM/", "inter", "op")
+        self.settings_window = SettingsWindow(self.settings_manager.sync_manager, self.nam,
+                                              "https://ersatzworld.net/ctSESAM/", "inter", "op")
         self.settings_window.finished.connect(self.sync_clicked)
         self.settings_window.show()
 
