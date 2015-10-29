@@ -269,7 +269,6 @@ class MainWindow(QWidget):
         if not self.settings_manager.sync_manager.has_settings():
             self.show_sync_settings()
         else:
-            print("Sync Now!")
             pull_successful, data = self.settings_manager.sync_manager.pull()
             if pull_successful and len(data) > 0:
                 remote_kgk_manager = KgkManager()
