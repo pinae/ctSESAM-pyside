@@ -12,6 +12,6 @@ addons:
 install:
   - pip install pycrypto
   - pip install requests
-  - pip install PySide
+  - travis_wait pip install PySide
 # command to run tests
 script: nosetests
