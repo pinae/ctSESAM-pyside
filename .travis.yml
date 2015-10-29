@@ -9,6 +9,7 @@ addons:
     packages:
     - qt4-qmake
     - libqt4-dev
-install: travis_wait "pip install -r requirements.txt"
+    - python3-pyside
+install: "pip install -r requirements_travis.txt"
 # command to run tests
 script: nosetests
