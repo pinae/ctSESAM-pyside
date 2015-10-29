@@ -12,6 +12,7 @@ addons:
 install:
   - pip install pycrypto
   - pip install requests
-  - travis_wait pip install PySide
+  - pip install PySide --no-index --find-links http://parkin.github.io/python-wheelhouse/PySide-1.2.2-cp34-cp34m-linux_x86_64.whl
+  - python ~/virtualenv/python${TRAVIS_PYTHON_VERSION}/bin/pyside_postinstall.py -install
 # command to run tests
 script: nosetests
