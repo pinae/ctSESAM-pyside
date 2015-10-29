@@ -71,7 +71,7 @@ class MainWindow(QWidget):
         layout.addStretch()
         main_layout.addStretch()
         self.setLayout(layout)
-        self.setGeometry(0, 25, 300, 450)
+        self.setGeometry(0, 25, 350, 450)
         self.setWindowTitle("c't SESAM")
         self.master_password_edit.setFocus()
         self.show()
@@ -200,8 +200,7 @@ class MainWindow(QWidget):
             self.clipboard_button.setVisible(False)
 
     def domain_changed(self):
-        if self.setting and self.setting_dirty:
-            self.setting.new_salt()
+        self.setting_dirty = True
         self.password.setText("")
         self.clipboard_button.setVisible(False)
         self.set_visibilities()
@@ -236,7 +235,7 @@ class MainWindow(QWidget):
         self.setting.set_username(self.username_edit.text())
         self.setting.set_length(self.strength_selector.get_length())
         self.setting.set_complexity(self.strength_selector.get_complexity())
-        self.setting_dirty = False
+        self.setting_dirty = True
         self.generate_password()
 
     def generate_password(self):
@@ -246,6 +245,8 @@ class MainWindow(QWidget):
         if not self.kgk_manager.kgk_crypter or not self.kgk_manager.salt:
             self.kgk_manager.get_kgk_crypter(self.master_password_edit.text().encode('utf-8'),
                                              self.kgk_manager.get_kgk_crypter_salt())
+        if self.setting_dirty:
+            self.setting.new_salt()
         generator = CtSesam(self.setting.get_domain(),
                             self.setting.get_username(),
                             self.kgk_manager.get_kgk(),
@@ -256,6 +257,7 @@ class MainWindow(QWidget):
         self.password.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
         self.clipboard_button.setVisible(True)
         self.settings_manager.store_settings(self.kgk_manager)
+        self.setting_dirty = False
 
     def copy_to_clipboard(self):
         self.clipboard.setText(self.password.text())
