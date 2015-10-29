@@ -4,7 +4,7 @@
 import argparse
 import sys
 from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon, QFrame
-from PySide.QtGui import QLabel, QLineEdit, QComboBox, QPushButton, QToolButton
+from PySide.QtGui import QLabel, QLineEdit, QComboBox, QToolButton
 from PySide.QtCore import Qt, QSize
 from PySide.QtNetwork import QNetworkAccessManager
 from password_strength_selector import PasswordStrengthSelector
@@ -27,7 +27,6 @@ class MainWindow(QWidget):
     username_edit = None
     strength_label = None
     strength_selector = None
-    generate_button = None
     password_label = None
     password = None
     sync_button = None
@@ -114,6 +113,7 @@ class MainWindow(QWidget):
         self.domain_edit.setEditable(True)
         self.domain_edit.textChanged.connect(self.domain_changed)
         self.domain_edit.currentIndexChanged.connect(self.domain_changed)
+        self.domain_edit.lineEdit().editingFinished.connect(self.domain_entered)
         self.domain_edit.lineEdit().returnPressed.connect(self.move_focus)
         self.domain_edit.setMaximumHeight(28)
         domain_label.setBuddy(self.domain_edit)
@@ -144,12 +144,6 @@ class MainWindow(QWidget):
         self.strength_label.setBuddy(self.strength_selector)
         layout.addWidget(self.strength_label)
         layout.addWidget(self.strength_selector)
-        # Button
-        self.generate_button = QPushButton("Erzeugen")
-        self.generate_button.clicked.connect(self.generate_button_pressed)
-        self.generate_button.setAutoDefault(True)
-        self.generate_button.setVisible(False)
-        layout.addWidget(self.generate_button)
         # Password
         self.password_label = QLabel("&Passwort:")
         self.password_label.setVisible(False)
@@ -186,7 +180,6 @@ class MainWindow(QWidget):
             self.username_edit.setVisible(True)
             self.strength_label.setVisible(True)
             self.strength_selector.setVisible(True)
-            self.generate_button.setVisible(self.setting_dirty)
             self.password_label.setVisible(True)
             self.password.setVisible(True)
         else:
@@ -194,7 +187,6 @@ class MainWindow(QWidget):
             self.username_edit.setVisible(False)
             self.strength_label.setVisible(False)
             self.strength_selector.setVisible(False)
-            self.generate_button.setVisible(False)
             self.password_label.setVisible(False)
             self.password.setVisible(False)
             self.clipboard_button.setVisible(False)
@@ -230,14 +222,6 @@ class MainWindow(QWidget):
                 return True
         self.generate_button.setFocus()
 
-    def generate_button_pressed(self):
-        self.setting = self.settings_manager.get_setting(self.domain_edit.lineEdit().text())
-        self.setting.set_username(self.username_edit.text())
-        self.setting.set_length(self.strength_selector.get_length())
-        self.setting.set_complexity(self.strength_selector.get_complexity())
-        self.setting_dirty = True
-        self.generate_password()
-
     def generate_password(self):
         if not self.kgk_manager.has_kgk():
             self.kgk_manager.create_new_kgk()
@@ -247,6 +231,7 @@ class MainWindow(QWidget):
                                              self.kgk_manager.get_kgk_crypter_salt())
         if self.setting_dirty:
             self.setting.new_salt()
+        self.settings_manager.set_setting(self.setting)
         generator = CtSesam(self.setting.get_domain(),
                             self.setting.get_username(),
                             self.kgk_manager.get_kgk(),
