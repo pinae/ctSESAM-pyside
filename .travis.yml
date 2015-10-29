@@ -10,6 +10,6 @@ addons:
     - qt4-qmake
     - libqt4-dev
     - python3-pyside
-install: "pip install -r requirements_travis.txt"
+install: "pip install -r requirementsTravis.txt"
 # command to run tests
 script: nosetests
