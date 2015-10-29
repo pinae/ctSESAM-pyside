@@ -44,7 +44,7 @@ class TestDomainExtractor(unittest.TestCase):
             "english.co.uk",
             extract_top_domain("english.co.uk"))
         self.assertEqual(
-            "noUrl",
+            "",
             extract_top_domain("noUrl"))
 
     def test_extract_full_domain(self):
