@@ -9,7 +9,9 @@ addons:
     packages:
     - qt4-qmake
     - libqt4-dev
-    - python3-pyside
-install: "pip install -r requirementsTravis.txt"
+install:
+  - pip install pycrypto
+  - pip install requests
+  - pip install PySide
 # command to run tests
 script: nosetests
