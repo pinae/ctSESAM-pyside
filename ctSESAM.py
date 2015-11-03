@@ -70,7 +70,7 @@ class MainWindow(QWidget):
         layout.addStretch()
         main_layout.addStretch()
         self.setLayout(layout)
-        self.setGeometry(0, 25, 350, 450)
+        self.setGeometry(0, 24, 350, 450)
         self.setWindowTitle("c't SESAM")
         self.master_password_edit.setFocus()
         self.show()
@@ -167,6 +167,7 @@ class MainWindow(QWidget):
 
     def masterpassword_entered(self):
         if len(self.master_password_edit.text()) > 0 and not self.decrypt_kgk_task:
+            self.kgk_manager.get_kgk_crypter_salt()
             self.decrypt_kgk_task = DecryptKgkTask(
                 self.master_password_edit.text(),
                 self.preference_manager,
@@ -281,6 +282,7 @@ class MainWindow(QWidget):
 
     # noinspection PyUnresolvedReferences
     def sync_clicked(self):
+        self.masterpassword_entered()
         if not self.settings_manager.sync_manager.has_settings():
             self.show_sync_settings()
         else:
@@ -299,16 +301,16 @@ class MainWindow(QWidget):
                         self.kgk_manager.set_preference_manager(self.preference_manager)
                         self.kgk_manager.store_local_kgk_block()
                     self.settings_manager.update_from_export_data(remote_kgk_manager, b64decode(data))
+                    current_domain = self.domain_edit.lineEdit().text()
                     for i in reversed(range(self.domain_edit.count())):
                         self.domain_edit.removeItem(i)
                     self.domain_edit.insertItems(0, self.settings_manager.get_domain_list())
-                    self.domain_edit.textChanged.emit(self.domain_edit.lineEdit().text())
+                    self.domain_edit.setEditText(current_domain)
             self.settings_manager.store_settings(self.kgk_manager)
 
     # noinspection PyUnresolvedReferences
     def show_sync_settings(self):
-        self.settings_window = SettingsWindow(self.settings_manager.sync_manager, self.nam,
-                                              "https://ersatzworld.net/ctSESAM/", "inter", "op")
+        self.settings_window = SettingsWindow(self.settings_manager.sync_manager, self.nam)
         self.settings_window.finished.connect(self.sync_clicked)
 
 if __name__ == "__main__":
