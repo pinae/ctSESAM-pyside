@@ -231,6 +231,8 @@ class MainWindow(QWidget):
                                              self.kgk_manager.get_kgk_crypter_salt())
         if self.setting_dirty:
             self.setting.new_salt()
+            self.setting.calculate_template()
+            self.setting.set_full_template(self.setting.get_template())
         self.settings_manager.set_setting(self.setting)
         generator = CtSesam(self.setting.get_domain(),
                             self.setting.get_username(),
@@ -264,6 +266,19 @@ class MainWindow(QWidget):
                 self.setting_dirty = True
             self.generate_password()
 
+    def migrate_local_domains(self, new_kgk_manager):
+        for domain in self.settings_manager.get_domain_list():
+            setting = self.settings_manager.get_setting(domain)
+            generator = CtSesam(setting.get_domain(),
+                                setting.get_username(),
+                                self.kgk_manager.get_kgk(),
+                                setting.get_salt(),
+                                setting.get_iterations())
+            setting.set_legacy_password(generator.generate(setting))
+            self.settings_manager.set_setting(setting)
+        self.kgk_manager = new_kgk_manager
+        self.settings_manager.store_local_settings(self.kgk_manager)
+
     # noinspection PyUnresolvedReferences
     def sync_clicked(self):
         if not self.settings_manager.sync_manager.has_settings():
@@ -277,11 +292,12 @@ class MainWindow(QWidget):
                    remote_kgk_manager.has_kgk() and self.kgk_manager.has_kgk() and \
                    self.kgk_manager.get_kgk() != remote_kgk_manager.get_kgk():
                     print("Lokal und auf dem Server gibt es unterschiedliche KGKs. Das ist ein Problem!")
+                    self.migrate_local_domains(remote_kgk_manager)
                 else:
                     if len(self.preference_manager.get_kgk_block()) != 112:
-                        kgk_manager = remote_kgk_manager
-                        kgk_manager.set_preference_manager(self.preference_manager)
-                        kgk_manager.store_local_kgk_block()
+                        self.kgk_manager = remote_kgk_manager
+                        self.kgk_manager.set_preference_manager(self.preference_manager)
+                        self.kgk_manager.store_local_kgk_block()
                     self.settings_manager.update_from_export_data(remote_kgk_manager, b64decode(data))
                     for i in reversed(range(self.domain_edit.count())):
                         self.domain_edit.removeItem(i)
@@ -294,7 +310,6 @@ class MainWindow(QWidget):
         self.settings_window = SettingsWindow(self.settings_manager.sync_manager, self.nam,
                                               "https://ersatzworld.net/ctSESAM/", "inter", "op")
         self.settings_window.finished.connect(self.sync_clicked)
-        self.settings_window.show()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate domain passwords from your masterpassword.")

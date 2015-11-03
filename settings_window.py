@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from PySide.QtCore import QByteArray, QUrl, QCryptographicHash, Signal
-from PySide.QtGui import QDialog, QIcon, QBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
+from PySide.QtCore import QByteArray, QUrl, QCryptographicHash, QSize, Signal
+from PySide.QtGui import QDialog, QIcon, QBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QFrame, QToolButton
 from PySide.QtNetwork import QNetworkRequest, QSsl, QSslCertificate, QSslConfiguration, QSslSocket
 from domain_extractor import extract_full_domain
 from base64 import b64encode
@@ -12,8 +12,12 @@ import re
 
 class SettingsWindow(QDialog):
     certificate_loaded = Signal()
+    url_edit = None
+    username_edit = None
+    password_edit = None
+    test_button = None
+    message = None
 
-    # noinspection PyUnresolvedReferences
     def __init__(self, sync_manager, network_access_manager, url=None, username=None, password=None):
         self.sync_manager = sync_manager
         self.nam = network_access_manager
@@ -24,8 +28,44 @@ class SettingsWindow(QDialog):
         self.setGeometry(70, 60, 300, 250)
         self.setWindowTitle("c't SESAM Sync Settings")
         layout = QBoxLayout(QBoxLayout.TopToBottom)
+        layout.setContentsMargins(0, 0, 0, 0)
+        # Header bar
+        header_bar = QFrame()
+        header_bar.setStyleSheet("QWidget { background: rgb(40, 40, 40); } " +
+                                 "QToolButton { background: rgb(40, 40, 40); }" +
+                                 "QToolTip { color: rgb(255, 255, 255); background-color: rgb(20, 20, 20); " +
+                                 "border: 1px solid white; }")
+        header_bar.setAutoFillBackground(True)
+        header_bar.setFixedHeight(45)
+        header_bar_layout = QBoxLayout(QBoxLayout.RightToLeft)
+        header_bar_layout.addStretch()
+        header_bar.setLayout(header_bar_layout)
+        layout.addWidget(header_bar)
+        self.create_header_bar(header_bar_layout)
         self.certificate_loaded.connect(self.test_connection)
-        # Widgets
+        # Main area
+        main_area = QFrame()
+        main_layout = QBoxLayout(QBoxLayout.TopToBottom)
+        main_area.setLayout(main_layout)
+        layout.addWidget(main_area)
+        self.create_main_area(main_layout, url, username, password)
+        # Show the window
+        layout.addStretch()
+        self.setLayout(layout)
+        self.show()
+
+    # noinspection PyUnresolvedReferences
+    def create_header_bar(self, layout):
+        back_button = QToolButton()
+        back_button.setIconSize(QSize(30, 30))
+        back_button.setIcon(QIcon("ic_action_back.png"))
+        back_button.setStyleSheet("border: 0px;")
+        back_button.setToolTip("Zurück")
+        back_button.clicked.connect(self.back)
+        layout.addWidget(back_button)
+
+    # noinspection PyUnresolvedReferences
+    def create_main_area(self, layout, url, username, password):
         url_label = QLabel("&URL des c't SESAM Sync Server:")
         self.url_edit = QLineEdit()
         if url:
@@ -63,10 +103,6 @@ class SettingsWindow(QDialog):
                                  'Kein Zertifikat vorhanden.' +
                                  '</span>')
         layout.addWidget(self.message)
-        # Show the window
-        layout.addStretch()
-        self.setLayout(layout)
-        self.setModal(True)
 
     def url_changed(self):
         if self.certificate:
@@ -145,7 +181,7 @@ class SettingsWindow(QDialog):
             ". Möchten Sie diesem Zertifikat vertrauen?")
         message_box.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
         message_box.setDefaultButton(QMessageBox.Yes)
-        answer = message_box.exec_()
+        answer = message_box.exec()
         if answer != QMessageBox.Yes:
             self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
                                  'Sie haben dem Zertifikat nicht vertraut.' +
@@ -177,3 +213,9 @@ class SettingsWindow(QDialog):
             self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
                                  'Vom Syncserver kam eine Antwort aber kein OK.' +
                                  '</span>')
+
+    def back(self):
+        if self.certificate:
+            self.accept()
+        else:
+            self.reject()
