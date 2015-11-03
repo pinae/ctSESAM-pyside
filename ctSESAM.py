@@ -301,10 +301,12 @@ class MainWindow(QWidget):
                         self.kgk_manager.set_preference_manager(self.preference_manager)
                         self.kgk_manager.store_local_kgk_block()
                     self.settings_manager.update_from_export_data(remote_kgk_manager, b64decode(data))
+                    self.domain_edit.blockSignals(True)
                     current_domain = self.domain_edit.lineEdit().text()
                     for i in reversed(range(self.domain_edit.count())):
                         self.domain_edit.removeItem(i)
                     self.domain_edit.insertItems(0, self.settings_manager.get_domain_list())
+                    self.domain_edit.blockSignals(False)
                     self.domain_edit.setEditText(current_domain)
             self.settings_manager.store_settings(self.kgk_manager)
 
