@@ -293,7 +293,8 @@ class MainWindow(QWidget):
                 if len(self.preference_manager.get_kgk_block()) == 112 and \
                    remote_kgk_manager.has_kgk() and self.kgk_manager.has_kgk() and \
                    self.kgk_manager.get_kgk() != remote_kgk_manager.get_kgk():
-                    print("Lokal und auf dem Server gibt es unterschiedliche KGKs. Das ist ein Problem!")
+                    if len(self.settings_manager.get_domain_list()) > 0:
+                        print("Lokal und auf dem Server gibt es unterschiedliche KGKs. Das ist ein Problem!")
                     self.migrate_local_domains(remote_kgk_manager)
                 else:
                     if len(self.preference_manager.get_kgk_block()) != 112:
