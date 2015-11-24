@@ -3,6 +3,7 @@
 
 import argparse
 import sys
+import os
 from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon, QFrame
 from PySide.QtGui import QLabel, QLineEdit, QComboBox, QToolButton
 from PySide.QtCore import Qt, QSize
@@ -39,7 +40,7 @@ class MainWindow(QWidget):
         super().__init__()
         self.clipboard = clipboard
         self.nam = QNetworkAccessManager()
-        self.setWindowIcon(QIcon('Logo_rendered_edited.png'))
+        self.setWindowIcon(QIcon(os.path.join('icons', 'Logo_rendered_edited.png')))
         layout = QBoxLayout(QBoxLayout.TopToBottom)
         layout.setContentsMargins(0, 0, 0, 0)
         self.preference_manager = PreferenceManager()
@@ -79,7 +80,7 @@ class MainWindow(QWidget):
     def create_header_bar(self, layout):
         self.sync_button = QToolButton()
         self.sync_button.setIconSize(QSize(30, 30))
-        self.sync_button.setIcon(QIcon("ic_action_sync.png"))
+        self.sync_button.setIcon(QIcon(os.path.join("icons", "ic_action_sync.png")))
         self.sync_button.setStyleSheet("border: 0px;")
         self.sync_button.setToolTip("Sync")
         self.sync_button.clicked.connect(self.sync_clicked)
@@ -87,7 +88,7 @@ class MainWindow(QWidget):
         layout.addWidget(self.sync_button)
         self.clipboard_button = QToolButton()
         self.clipboard_button.setIconSize(QSize(30, 30))
-        self.clipboard_button.setIcon(QIcon("ic_action_copy.png"))
+        self.clipboard_button.setIcon(QIcon(os.path.join("icons", "ic_action_copy.png")))
         self.clipboard_button.setStyleSheet("border: 0px;")
         self.clipboard_button.setToolTip("in die Zwischenablage")
         self.clipboard_button.clicked.connect(self.copy_to_clipboard)

@@ -8,6 +8,7 @@ from domain_extractor import extract_full_domain
 from base64 import b64encode
 import json
 import re
+import os
 
 
 class SettingsWindow(QDialog):
@@ -24,7 +25,7 @@ class SettingsWindow(QDialog):
         self.certificate = ""
         self.replies = set()
         super().__init__()
-        self.setWindowIcon(QIcon('Logo_sync.png'))
+        self.setWindowIcon(QIcon(os.path.join('icons', 'Logo_sync.png')))
         self.setGeometry(70, 60, 300, 250)
         self.setWindowTitle("c't SESAM Sync Settings")
         layout = QBoxLayout(QBoxLayout.TopToBottom)
@@ -58,7 +59,7 @@ class SettingsWindow(QDialog):
     def create_header_bar(self, layout):
         back_button = QToolButton()
         back_button.setIconSize(QSize(30, 30))
-        back_button.setIcon(QIcon("ic_action_back.png"))
+        back_button.setIcon(QIcon(os.path.join("icons", "ic_action_back.png")))
         back_button.setStyleSheet("border: 0px;")
         back_button.setToolTip("Zurück")
         back_button.clicked.connect(self.back)
