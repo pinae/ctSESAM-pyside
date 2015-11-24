@@ -19,7 +19,7 @@ from password_settings_manager import PasswordSettingsManager
 from decrypt_kgk_task import DecryptKgkTask
 
 
-class MainWindow(QWidget):
+class MainWindow(QWidget, object):
     master_password_label = None
     master_password_edit = None
     domain_label = None
@@ -37,7 +37,7 @@ class MainWindow(QWidget):
     settings_window = None
 
     def __init__(self):
-        super().__init__()
+        super(MainWindow, self).__init__()
         self.nam = QNetworkAccessManager()
         self.setWindowIcon(QIcon(os.path.join('icons', 'Logo_rendered_edited.png')))
         layout = QBoxLayout(QBoxLayout.TopToBottom)
