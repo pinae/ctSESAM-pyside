@@ -6,7 +6,7 @@ import sys
 import os
 from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon, QFrame
 from PySide.QtGui import QLabel, QLineEdit, QComboBox, QToolButton
-from PySide.QtCore import Qt, QSize
+from PySide.QtCore import Qt, QSize, QPoint, QCoreApplication, QSettings
 from PySide.QtNetwork import QNetworkAccessManager
 from password_strength_selector import PasswordStrengthSelector
 from settings_window import SettingsWindow
@@ -36,9 +36,8 @@ class MainWindow(QWidget):
     decrypt_kgk_task = None
     settings_window = None
 
-    def __init__(self, clipboard):
+    def __init__(self):
         super().__init__()
-        self.clipboard = clipboard
         self.nam = QNetworkAccessManager()
         self.setWindowIcon(QIcon(os.path.join('icons', 'Logo_rendered_edited.png')))
         layout = QBoxLayout(QBoxLayout.TopToBottom)
@@ -71,7 +70,15 @@ class MainWindow(QWidget):
         layout.addStretch()
         main_layout.addStretch()
         self.setLayout(layout)
-        self.setGeometry(0, 24, 350, 450)
+        settings = QSettings()
+        size = settings.value("MainWindow/size")
+        if not size:
+            size = QSize(350, 450)
+        self.resize(size)
+        position = settings.value("MainWindow/pos")
+        if not position:
+            position = QPoint(0, 24)
+        self.move(position)
         self.setWindowTitle("c't SESAM")
         self.master_password_edit.setFocus()
         self.show()
@@ -156,6 +163,12 @@ class MainWindow(QWidget):
         self.password_label.setBuddy(self.password)
         layout.addWidget(self.password_label)
         layout.addWidget(self.password)
+
+    def closeEvent(self, *args, **kwargs):
+        settings = QSettings()
+        settings.setValue("MainWindow/size", self.size())
+        settings.setValue("MainWindow/pos", self.pos())
+        settings.sync()
 
     def masterpassword_changed(self):
         self.kgk_manager.reset()
@@ -249,7 +262,7 @@ class MainWindow(QWidget):
         self.setting_dirty = False
 
     def copy_to_clipboard(self):
-        self.clipboard.setText(self.password.text())
+        QApplication.clipboard().setText(self.password.text())
 
     def username_changed(self):
         if self.setting:
@@ -326,5 +339,8 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--domain', help="Prefill the domain field.")
     args = parser.parse_args()
     app = QApplication(sys.argv)
-    window = MainWindow(app.clipboard())
+    QCoreApplication.setOrganizationName("c't")
+    QCoreApplication.setOrganizationDomain("ct.de")
+    QCoreApplication.setApplicationName("ctSESAM-pyside")
+    window = MainWindow()
     app.exec_()
