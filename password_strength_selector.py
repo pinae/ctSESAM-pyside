@@ -82,7 +82,7 @@ class PasswordStrengthSelector(QtGui.QWidget):
                 line.append(color)
             self.color_matrix.append(line)
 
-    def paintEvent(self, e):
+    def paintEvent(self, *args):
         qp = QtGui.QPainter()
         qp.begin(self)
         self.draw(qp)
