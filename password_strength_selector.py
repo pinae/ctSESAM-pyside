@@ -5,7 +5,7 @@ from PySide import QtGui, QtCore
 import math
 
 
-class PasswordStrengthSelector(QtGui.QWidget):
+class PasswordStrengthSelector(QtGui.QWidget, object):
     strength_changed = QtCore.Signal((int, int))
 
     """

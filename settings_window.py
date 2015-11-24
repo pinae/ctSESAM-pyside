@@ -11,7 +11,7 @@ import re
 import os
 
 
-class SettingsWindow(QDialog):
+class SettingsWindow(QDialog, object):
     certificate_loaded = Signal()
     url_edit = None
     username_edit = None
@@ -24,7 +24,7 @@ class SettingsWindow(QDialog):
         self.nam = network_access_manager
         self.certificate = ""
         self.replies = set()
-        super().__init__()
+        super(SettingsWindow, self).__init__()
         self.setWindowIcon(QIcon(os.path.join('icons', 'Logo_sync.png')))
         self.setGeometry(70, 60, 300, 250)
         self.setWindowTitle("c't SESAM Sync Settings")
