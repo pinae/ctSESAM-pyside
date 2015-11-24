@@ -5,7 +5,7 @@ from multiprocessing import Process, Queue
 from crypter import Crypter
 
 
-class DecryptKgkTask:
+class DecryptKgkTask(object):
     def __init__(self, password, preference_manager, kgk_manager, settings_manager, domain_edit):
         salt = preference_manager.get_salt()
         self.kgk_manager = kgk_manager
