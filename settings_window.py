@@ -182,7 +182,7 @@ class SettingsWindow(QDialog, object):
             ". Möchten Sie diesem Zertifikat vertrauen?")
         message_box.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
         message_box.setDefaultButton(QMessageBox.Yes)
-        answer = message_box.exec()
+        answer = message_box.exec_()
         if answer != QMessageBox.Yes:
             self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
                                  'Sie haben dem Zertifikat nicht vertraut.' +
