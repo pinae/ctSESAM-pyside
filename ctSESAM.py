@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import sys
 import os
 from PySide.QtGui import QApplication, QWidget, QBoxLayout, QFont, QIcon, QFrame
 from PySide.QtGui import QLabel, QLineEdit, QComboBox, QToolButton
@@ -338,7 +337,7 @@ if __name__ == "__main__":
     parser.add_argument('--master-password', help="Prefill the masterpassword field.")
     parser.add_argument('-d', '--domain', help="Prefill the domain field.")
     args = parser.parse_args()
-    app = QApplication(sys.argv)
+    app = QApplication([])
     QCoreApplication.setOrganizationName("c't")
     QCoreApplication.setOrganizationDomain("ct.de")
     QCoreApplication.setApplicationName("ctSESAM-pyside")
