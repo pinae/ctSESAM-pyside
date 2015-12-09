@@ -163,6 +163,12 @@ class MainWindow(QWidget, object):
         layout.addWidget(self.password_label)
         layout.addWidget(self.password)
 
+    def set_masterpassword(self, masterpassword):
+        self.master_password_edit.setText(masterpassword)
+
+    def set_domain(self, domain):
+        self.domain_edit.lineEdit().setText(domain)
+
     def closeEvent(self, *args, **kwargs):
         settings = QSettings()
         settings.setValue("MainWindow/size", self.size())
@@ -342,4 +348,11 @@ if __name__ == "__main__":
     QCoreApplication.setOrganizationDomain("ct.de")
     QCoreApplication.setApplicationName("ctSESAM-pyside")
     window = MainWindow()
+    if type(args.master_password) is str and args.master_password:
+        window.set_masterpassword(args.master_password)
+        window.masterpassword_changed()
+        window.masterpassword_entered()
+    if type(args.domain) is str and args.domain:
+        window.set_domain(args.domain)
+        window.domain_changed()
     app.exec_()
