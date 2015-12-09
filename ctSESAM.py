@@ -331,8 +331,15 @@ class MainWindow(QWidget, object):
             self.settings_manager.store_settings(self.kgk_manager)
 
     # noinspection PyUnresolvedReferences
-    def show_sync_settings(self):
-        self.settings_window = SettingsWindow(self.settings_manager.sync_manager, self.nam)
+    def show_sync_settings(self, url=None, username=None, password=None):
+        self.settings_manager.sync_manager.username
+        self.settings_window = SettingsWindow(
+            self.settings_manager.sync_manager,
+            self.nam,
+            url=self.settings_manager.sync_manager.server_address,
+            username=self.settings_manager.sync_manager.username,
+            password=self.settings_manager.sync_manager.password,
+            certificate=self.settings_manager.sync_manager.certificate)
         self.settings_window.finished.connect(self.sync_clicked)
 
 if __name__ == "__main__":
@@ -355,4 +362,6 @@ if __name__ == "__main__":
     if type(args.domain) is str and args.domain:
         window.set_domain(args.domain)
         window.domain_changed()
+    if args.update_sync_settings:
+        window.show_sync_settings()
     app.exec_()

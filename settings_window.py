@@ -19,10 +19,10 @@ class SettingsWindow(QDialog, object):
     test_button = None
     message = None
 
-    def __init__(self, sync_manager, network_access_manager, url=None, username=None, password=None):
+    def __init__(self, sync_manager, network_access_manager, url=None, username=None, password=None, certificate=""):
         self.sync_manager = sync_manager
         self.nam = network_access_manager
-        self.certificate = ""
+        self.certificate = certificate
         self.replies = set()
         super(SettingsWindow, self).__init__()
         self.setWindowIcon(QIcon(os.path.join('icons', 'Logo_sync.png')))
