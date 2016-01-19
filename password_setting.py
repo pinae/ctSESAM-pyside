@@ -175,8 +175,10 @@ class PasswordSetting(object):
                 if c in s:
                     s.remove(c)
         new_character_set = ""
-        for c in DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
-                DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA:
+        for c in DEFAULT_CHARACTER_SET_DIGITS + \
+                DEFAULT_CHARACTER_SET_LOWER_CASE + \
+                DEFAULT_CHARACTER_SET_UPPER_CASE + \
+                DEFAULT_CHARACTER_SET_EXTRA:
             if c in s:
                 new_character_set += c
                 s.remove(c)
@@ -191,7 +193,9 @@ class PasswordSetting(object):
         :return: does it use letters?
         :rtype: bool
         """
-        return self.used_characters[:len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE)] == \
+        return self.used_characters[len(DEFAULT_CHARACTER_SET_DIGITS):len(DEFAULT_CHARACTER_SET_DIGITS +
+                                                                          DEFAULT_CHARACTER_SET_LOWER_CASE +
+                                                                          DEFAULT_CHARACTER_SET_UPPER_CASE)] == \
             DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE
 
     def set_use_letters(self, use_letters):
@@ -216,7 +220,9 @@ class PasswordSetting(object):
         :return: using lower case?
         :rtype: bool
         """
-        return self.used_characters[:len(DEFAULT_CHARACTER_SET_LOWER_CASE)] == DEFAULT_CHARACTER_SET_LOWER_CASE
+        return self.used_characters[
+               len(DEFAULT_CHARACTER_SET_DIGITS):len(DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_LOWER_CASE)] \
+            == DEFAULT_CHARACTER_SET_LOWER_CASE
 
     def set_use_lower_case(self, use_lower_case):
         """
@@ -242,8 +248,9 @@ class PasswordSetting(object):
         :rtype: bool
         """
         return self.used_characters[
-            len(DEFAULT_CHARACTER_SET_LOWER_CASE):len(
-                DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE)] \
+               len(DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_LOWER_CASE):len(
+                       DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_LOWER_CASE +
+                       DEFAULT_CHARACTER_SET_UPPER_CASE)] \
             == DEFAULT_CHARACTER_SET_UPPER_CASE
 
     def set_use_upper_case(self, use_upper_case):
@@ -268,9 +275,9 @@ class PasswordSetting(object):
         :return: use digits?
         :rtype: bool
         """
-        return self.used_characters[
-            len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE):len(
-                DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + DEFAULT_CHARACTER_SET_DIGITS)] \
+        return self.used_characters[:len(DEFAULT_CHARACTER_SET_DIGITS +
+                                         DEFAULT_CHARACTER_SET_LOWER_CASE +
+                                         DEFAULT_CHARACTER_SET_UPPER_CASE)] \
             == DEFAULT_CHARACTER_SET_DIGITS
 
     def set_use_digits(self, use_digits):
@@ -296,7 +303,9 @@ class PasswordSetting(object):
         :rtype: bool
         """
         return self.used_characters[
-            len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + DEFAULT_CHARACTER_SET_DIGITS):] \
+               len(DEFAULT_CHARACTER_SET_DIGITS +
+                   DEFAULT_CHARACTER_SET_LOWER_CASE +
+                   DEFAULT_CHARACTER_SET_UPPER_CASE):] \
             == DEFAULT_CHARACTER_SET_EXTRA
 
     def set_use_extra(self, use_extra):
@@ -315,12 +324,12 @@ class PasswordSetting(object):
                 s.add(c)
         else:
             for c in list(s):
-                if c not in DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
-                        DEFAULT_CHARACTER_SET_DIGITS:
+                if c not in DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_LOWER_CASE + \
+                        DEFAULT_CHARACTER_SET_UPPER_CASE:
                     s.remove(c)
         new_character_set = ""
-        for c in DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
-                DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA:
+        for c in DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_LOWER_CASE + \
+                DEFAULT_CHARACTER_SET_UPPER_CASE + DEFAULT_CHARACTER_SET_EXTRA:
             if c in s:
                 new_character_set += c
                 s.remove(c)
@@ -337,8 +346,8 @@ class PasswordSetting(object):
         :return: are we using a custom character set?
         :rtype: bool
         """
-        return not self.used_characters == DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
-            DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA
+        return not self.used_characters == DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_LOWER_CASE + \
+            DEFAULT_CHARACTER_SET_UPPER_CASE + DEFAULT_CHARACTER_SET_EXTRA
 
     @staticmethod
     def get_default_character_set():
@@ -349,8 +358,8 @@ class PasswordSetting(object):
         :return: the default character set
         :rtype: str
         """
-        return DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
-            DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA
+        return DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
+            DEFAULT_CHARACTER_SET_EXTRA
 
     def get_character_set(self):
         """
