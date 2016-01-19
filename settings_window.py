@@ -159,16 +159,20 @@ class SettingsWindow(QDialog, object):
             self.replies.remove(reply)
         except KeyError:
             return False
-        cert = reply.sslConfiguration().peerCertificateChain()[-1]
-        if not cert.isValid():
+        ca_cert = reply.sslConfiguration().peerCertificateChain()[-1]
+        if not ca_cert.isValid():
             self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
                                  'Das Zertifikat ist nicht gültig.' +
                                  '</span>')
             return False
-        domain_list = [cert.subjectInfo(cert.SubjectInfo.CommonName)]
-        for key in cert.alternateSubjectNames().keys():
-            if type(key) == str and key[:3] == "DNS":
-                domain_list.append(cert.alternateSubjectNames()[key])
+        domain_list = []
+        for cert in reply.sslConfiguration().peerCertificateChain():
+            domain_list.append(cert.subjectInfo(cert.SubjectInfo.CommonName))
+            for key in cert.alternateSubjectNames().keys():
+                if type(key) == str and key[:3] == "DNS":
+                    domain_list.append(cert.alternateSubjectNames()[key])
+        print(extract_full_domain(self.url_edit.text()))
+        print(domain_list)
         if extract_full_domain(self.url_edit.text()) not in domain_list:
             self.message.setText('<span style="font-size: 10px; color: #aa0000;">' +
                                  'Das Zertifikat wurde für eine andere Domain ausgestellt.' +
@@ -178,7 +182,7 @@ class SettingsWindow(QDialog, object):
         message_box.setText("Ein unbekanntes CA-Zertifikat wurde gefunden.")
         message_box.setInformativeText(
             "Das Zertifikat hat den Fingerabdruck " +
-            ":".join(re.findall("(.{2})", str(cert.digest(QCryptographicHash.Sha1).toHex().toUpper()))) +
+            ":".join(re.findall("(.{2})", str(ca_cert.digest(QCryptographicHash.Sha1).toHex().toUpper()))) +
             ". Möchten Sie diesem Zertifikat vertrauen?")
         message_box.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
         message_box.setDefaultButton(QMessageBox.Yes)
@@ -190,7 +194,7 @@ class SettingsWindow(QDialog, object):
             return False
         if not self.certificate:
             reply.ignoreSslErrors()
-        self.certificate = cert.toPem()
+        self.certificate = ca_cert.toPem()
         self.save_settings()
         self.certificate_loaded.emit()
 
