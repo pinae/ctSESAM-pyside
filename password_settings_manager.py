@@ -208,13 +208,16 @@ class PasswordSettingsManager(object):
                 data_set = self.remote_data[domain_name]
                 if 'deleted' in data_set and data_set['deleted']:
                     for i, setting_dict in enumerate(settings_list):
-                        if setting_dict['domain'] == setting_dict['domain'] and datetime.strptime(
+                        if setting_dict['domain'] == domain_name and datetime.strptime(
                                 data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > datetime.strptime(
                                 setting_dict['mDate'], "%Y-%m-%dT%H:%M:%S"):
                             settings_list[i] = data_set
                 if domain_name not in settings_list.keys():
+                    m_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+                    if 'mDate' in self.remote_data[domain_name]:
+                        m_date = self.remote_data[domain_name]['mDate']
                     settings_list[domain_name] = {
-                        'mDate': datetime.now(),
+                        'mDate': m_date,
                         'deleted': True
                     }
         settings_crypter = self.get_settings_crypter(kgk_manager)
