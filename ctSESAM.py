@@ -252,7 +252,6 @@ class MainWindow(QWidget, object):
         if self.setting_dirty:
             self.setting.new_salt()
             self.setting.calculate_template()
-            self.setting.set_full_template(self.setting.get_template())
         self.settings_manager.set_setting(self.setting)
         generator = CtSesam(self.setting.get_domain(),
                             self.setting.get_username(),
