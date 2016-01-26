@@ -274,7 +274,7 @@ class PasswordSettingsManager(object):
                 data_set = self.remote_data[domain_name]
                 if setting.get_domain() == domain_name:
                     found = True
-                    if setting.get_m_date() >= datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S"):
+                    if setting.get_m_date() > datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S"):
                         self.update_remote = True
             if not found:
                 self.update_remote = True
