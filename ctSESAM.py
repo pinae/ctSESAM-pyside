@@ -253,12 +253,15 @@ class MainWindow(QWidget, object):
             self.setting.new_salt()
             self.setting.calculate_template()
         self.settings_manager.set_setting(self.setting)
-        generator = CtSesam(self.setting.get_domain(),
-                            self.setting.get_username(),
-                            self.kgk_manager.get_kgk(),
-                            self.setting.get_salt(),
-                            self.setting.get_iterations())
-        password = generator.generate(self.setting)
+        if not self.setting.get_legacy_password():
+            generator = CtSesam(self.setting.get_domain(),
+                                self.setting.get_username(),
+                                self.kgk_manager.get_kgk(),
+                                self.setting.get_salt(),
+                                self.setting.get_iterations())
+            password = generator.generate(self.setting)
+        else:
+            password = self.setting.get_legacy_password()
         self.password.setText(password)
         self.password.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
         self.clipboard_button.setVisible(True)
