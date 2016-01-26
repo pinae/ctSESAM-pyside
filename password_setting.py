@@ -318,7 +318,6 @@ class PasswordSetting(object):
             self.creation_date = datetime.strptime(creation_date, "%Y-%m-%dT%H:%M:%S")
         except ValueError:
             print("This date has a wrong format: " + creation_date)
-            self.creation_date = datetime.now()
         if self.modification_date < self.creation_date:
             self.modification_date = self.creation_date
 
@@ -354,7 +353,6 @@ class PasswordSetting(object):
                 self.modification_date = datetime.strptime(modification_date, "%Y-%m-%dT%H:%M:%S")
             except ValueError:
                 print("This date has a wrong format: " + modification_date)
-                self.modification_date = datetime.now()
         else:
             self.modification_date = datetime.now()
         if self.modification_date < self.creation_date:
@@ -472,8 +470,6 @@ class PasswordSetting(object):
         :return: template
         :rtype: str
         """
-        if not self.template:
-            self.calculate_template()
         return self.template
 
     def set_full_template(self, full_template):
@@ -604,7 +600,7 @@ class PasswordSetting(object):
         if "length" in loaded_setting and "usedCharacters" in loaded_setting and \
                         "passwordTemplate" not in loaded_setting:
             self.template = "o"*int(loaded_setting["length"])
-            self.set_extra_character_set(loaded_setting["extras"])
+            self.set_extra_character_set(loaded_setting["usedCharacters"])
             self.calculate_template(False, False, False, True)
 
     def ask_for_input(self):
