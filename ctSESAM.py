@@ -263,7 +263,7 @@ class MainWindow(QWidget, object):
         self.password.setText(password)
         self.password.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
         self.clipboard_button.setVisible(True)
-        self.settings_manager.store_settings(self.kgk_manager)
+        self.settings_manager.store_local_settings(self.kgk_manager)
         self.setting_dirty = False
 
     def copy_to_clipboard(self):
