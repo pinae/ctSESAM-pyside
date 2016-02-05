@@ -25,7 +25,7 @@ def extract_top_domain(url):
     if matches and len(matches.groups()) >= 2:
         return matches.group(len(matches.groups()) - 1) + matches.group(len(matches.groups()))
     else:
-        return ""
+        return url
 
 
 def extract_full_domain(url):
