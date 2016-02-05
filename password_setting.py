@@ -423,10 +423,7 @@ class PasswordSetting(object):
     def calculate_template(self, use_lower_case=None, use_upper_case=None, use_digits=None, use_extra=None):
         """
         Calculates a new template based on the character set configuration and the length.
-<<<<<<< HEAD
-=======
 
->>>>>>> console-version/master
         :param use_extra: Gets this setting from the current template if None.
         :type use_extra: bool
         :param use_digits: Gets this setting from the current template if None.
