@@ -48,10 +48,11 @@ class MainWindow(QWidget, object):
         self.setting_dirty = True
         # Header bar
         header_bar = QFrame()
-        header_bar.setStyleSheet("QWidget { background: rgb(40, 40, 40); } " +
-                                 "QToolButton { background: rgb(40, 40, 40); }" +
-                                 "QToolTip { color: rgb(255, 255, 255); background-color: rgb(20, 20, 20); " +
-                                 "border: 1px solid white; }")
+        header_bar.setStyleSheet(
+            "QWidget { background: rgb(40, 40, 40); } " +
+            "QToolButton { background: rgb(40, 40, 40); }" +
+            "QToolTip { color: rgb(255, 255, 255); background-color: rgb(20, 20, 20); " +
+            "border: 1px solid white; }")
         header_bar.setAutoFillBackground(True)
         header_bar.setFixedHeight(45)
         header_bar_layout = QBoxLayout(QBoxLayout.LeftToRight)
@@ -334,7 +335,6 @@ class MainWindow(QWidget, object):
 
     # noinspection PyUnresolvedReferences
     def show_sync_settings(self, url=None, username=None, password=None):
-        self.settings_manager.sync_manager.username
         self.settings_window = SettingsWindow(
             self.settings_manager.sync_manager,
             self.nam,
